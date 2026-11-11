@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+data/odds/
+__pycache__/
+*.pyc
+.DS_Store
+
+# 前后端依赖、构建产物与本地运行数据
+node_modules/
+dist/
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.tsbuildinfo
+*.egg-info/
+.coverage
+htmlcov/
+data/app/
+*.log

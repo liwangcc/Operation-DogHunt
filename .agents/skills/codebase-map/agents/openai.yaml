@@ -1,0 +1,4 @@
+interface:
+  display_name: "代码库现状说明书"
+  short_description: "按父块总览与模块子块维护代码现状，核对入口、依赖、完成情况和验证依据"
+  default_prompt: "请用 $codebase-map 核对当前代码库，建立或更新父块总览与模块子块，说明实际完成情况和验证边界。"

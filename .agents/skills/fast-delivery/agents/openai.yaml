@@ -1,0 +1,5 @@
+interface:
+  display_name: "高效交付"
+  short_description: "抓住用户目标，快速完成结果，普通任务精简验证，复杂任务按影响充分验收"
+policy:
+  allow_implicit_invocation: true
