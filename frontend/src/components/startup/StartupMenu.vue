@@ -25,7 +25,7 @@ const emit = defineEmits<{
           class="menu-item"
           :class="{ active: active === item.id }"
           :disabled="disabled"
-          :aria-label="`${item.label}，位于${item.place}${item.planned ? '，功能待开发' : ''}`"
+          :aria-label="`${item.label}，位于${item.place}${item.planned ? '，界面预览，尚未接入数据' : ''}`"
           @mouseenter="emit('preview', item.id)"
           @focus="emit('preview', item.id)"
           @blur="emit('preview', null)"
@@ -33,7 +33,7 @@ const emit = defineEmits<{
         >
           <span class="menu-mark" aria-hidden="true">{{ item.mark }}</span>
           <span class="menu-label">{{ item.label }}</span>
-          <span v-if="item.planned" class="menu-tag" aria-hidden="true">待开发</span>
+          <span v-if="item.planned" class="menu-tag" aria-hidden="true">预览</span>
           <span class="menu-arrow" aria-hidden="true">→</span>
         </button>
       </li>

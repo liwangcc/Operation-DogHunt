@@ -10,9 +10,12 @@ const route = useRoute()
   <RouterView v-if="route.meta.fullscreen" />
   <AppShell v-else-if="route.matched.length">
     <RouterView v-slot="{ Component }">
-      <KeepAlive include="ChatView">
-        <component :is="Component" />
-      </KeepAlive>
+      <!-- 页面之间做一次很短的淡入；只缓存聊天页，切走再回来对话和输入都还在。 -->
+      <Transition name="page" mode="out-in">
+        <KeepAlive include="ChatView">
+          <component :is="Component" />
+        </KeepAlive>
+      </Transition>
     </RouterView>
   </AppShell>
 </template>

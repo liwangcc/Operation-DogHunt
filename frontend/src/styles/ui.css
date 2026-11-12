@@ -1,0 +1,133 @@
+/* 内页共用的界面零件：页面骨架、面板、按钮、标签、分段选择、表格、提示条和入场动效。 */
+
+/* —— 页面骨架 —— */
+.page { width: 100%; max-width: 1360px; margin: 0 auto; padding: 30px 36px 64px; }
+.page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px 28px; flex-wrap: wrap; margin-bottom: 22px; }
+.overline { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .3em; color: var(--cyan); text-transform: uppercase; }
+.overline::before { content: ''; flex: 0 0 auto; width: 18px; height: 6px; background: var(--cyan); transform: skewX(-38deg); }
+.page-title { margin: 10px 0 0; font-size: clamp(26px, 2.5vw, 34px); font-weight: 700; line-height: 1.2; letter-spacing: .05em; }
+.page-sub { max-width: 64ch; margin: 8px 0 0; font-size: 14px; line-height: 1.75; color: var(--text-2); }
+.page-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.section-title { display: flex; align-items: baseline; gap: 12px; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .08em; }
+.section-title small { font-size: 12px; font-weight: 400; letter-spacing: .04em; color: var(--text-3); }
+
+/* —— 面板 —— */
+.panel { position: relative; border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(15, 31, 52, .9), rgba(9, 21, 37, .93)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04); }
+.panel-pad { padding: 20px 22px; }
+/* 四角的定位标记：只用在每页最重要的一两块面板上。 */
+.panel--ticks::after {
+  content: ''; position: absolute; inset: -1px; pointer-events: none; border-radius: inherit;
+  --tick: var(--cyan-line);
+  background:
+    linear-gradient(var(--tick), var(--tick)) top left / 14px 1px, linear-gradient(var(--tick), var(--tick)) top left / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) top right / 14px 1px, linear-gradient(var(--tick), var(--tick)) top right / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) bottom left / 14px 1px, linear-gradient(var(--tick), var(--tick)) bottom left / 1px 14px,
+    linear-gradient(var(--tick), var(--tick)) bottom right / 14px 1px, linear-gradient(var(--tick), var(--tick)) bottom right / 1px 14px;
+  background-repeat: no-repeat;
+}
+
+/* —— 文字与数字 —— */
+.label { font-size: 11px; letter-spacing: .2em; color: var(--text-3); text-transform: uppercase; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum'; }
+.num-display { font-style: italic; font-weight: 800; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--font-mono); }
+.text-2 { color: var(--text-2); }
+.text-3 { color: var(--text-3); }
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.link { color: var(--cyan); text-underline-offset: 3px; }
+.link:hover { text-decoration: underline; }
+
+/* —— 按钮 —— */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 36px; padding: 0 14px;
+  border: 1px solid var(--line-2); border-radius: var(--radius); background: rgba(8, 19, 33, .6); color: var(--text-2);
+  font-size: 13px; letter-spacing: .08em; white-space: nowrap;
+  transition: color .18s, background .18s, border-color .18s, box-shadow .18s, transform .18s;
+}
+.btn:hover:not(:disabled) { border-color: var(--cyan-line); background: rgba(21, 62, 82, .45); color: var(--text); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn--primary { border-color: var(--cyan); background: rgba(21, 62, 82, .6); color: var(--text); box-shadow: inset 0 0 18px rgba(73, 221, 235, .12), 0 0 18px rgba(73, 221, 235, .1); }
+.btn--primary:hover:not(:disabled) { border-color: var(--cyan); background: rgba(31, 96, 120, .82); box-shadow: inset 0 0 22px rgba(73, 221, 235, .2), 0 0 26px rgba(73, 221, 235, .26); }
+.btn--amber { border-color: var(--amber-line); color: #f3cf9f; }
+.btn--amber:hover:not(:disabled) { border-color: var(--amber); background: rgba(70, 46, 20, .6); color: #fbe6c7; }
+.btn--quiet { border-color: transparent; background: transparent; }
+.btn--sm { height: 30px; padding: 0 10px; font-size: 12px; }
+.btn--lg { height: 44px; padding: 0 20px; font-size: 14px; letter-spacing: .16em; }
+.icon-btn { display: inline-grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid transparent; border-radius: var(--radius); background: transparent; color: var(--text-3); transition: color .18s, background .18s, border-color .18s; }
+.icon-btn:hover:not(:disabled) { border-color: var(--line-2); background: rgba(21, 62, 82, .4); color: var(--text); }
+
+/* —— 标签与状态点 —— */
+.tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border: 1px solid var(--line-2); border-radius: 3px; font-size: 11px; letter-spacing: .06em; color: var(--text-2); white-space: nowrap; }
+.tag--ok { border-color: rgba(94, 212, 162, .4); background: var(--green-soft); color: var(--green); }
+.tag--warn { border-color: var(--amber-line); background: var(--amber-soft); color: var(--amber); }
+.tag--bad { border-color: rgba(242, 131, 119, .45); background: var(--red-soft); color: var(--red); }
+.tag--info { border-color: var(--cyan-line); background: var(--cyan-soft); color: var(--cyan); }
+.tag--violet { border-color: rgba(169, 157, 246, .45); background: var(--violet-soft); color: var(--violet); }
+.dot { display: inline-block; flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.dot--live { box-shadow: 0 0 0 0 currentColor; animation: dot-ping 2.4s ease-out infinite; }
+@keyframes dot-ping { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent); } 70%, 100% { box-shadow: 0 0 0 7px transparent; } }
+
+/* —— 分段选择 —— */
+.seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.seg::-webkit-scrollbar { display: none; }
+.seg button { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border: 0; border-radius: 3px; background: transparent; color: var(--text-3); font-size: 13px; letter-spacing: .04em; white-space: nowrap; transition: color .18s, background .18s; }
+.seg button:hover:not(:disabled) { color: var(--text); }
+.seg button[aria-pressed='true'] { background: var(--cyan-soft); color: var(--text); box-shadow: inset 0 0 0 1px var(--cyan-line); }
+.seg-count { font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); }
+.seg button[aria-pressed='true'] .seg-count { color: var(--cyan); }
+
+/* —— 表单 —— */
+.select {
+  appearance: none; height: 32px; max-width: 100%; padding: 0 30px 0 10px; border: 1px solid var(--line-2); border-radius: var(--radius); color: var(--text); font-size: 13px; cursor: pointer;
+  background: var(--well) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23aebfce' stroke-width='1.5'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 10px center;
+  transition: border-color .18s;
+}
+.select:hover:not(:disabled) { border-color: var(--cyan-line); }
+.select option { background: var(--panel-solid); color: var(--text); }
+.input { height: 34px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--well); color: var(--text); font-size: 13px; transition: border-color .18s; }
+.input::placeholder { color: var(--text-3); opacity: 1; }
+.input:hover:not(:disabled), .input:focus { border-color: var(--cyan-line); }
+
+/* —— 提示条 —— */
+.alert { display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 10px 14px; border: 1px solid var(--line-2); border-left-width: 2px; border-radius: var(--radius); background: rgba(8, 19, 33, .6); font-size: 13px; line-height: 1.7; color: var(--text-2); }
+.alert--warn { border-color: var(--amber-line); background: var(--amber-soft); color: #f1cb99; }
+.alert--bad { border-color: rgba(242, 131, 119, .45); background: var(--red-soft); color: #f8b8b0; }
+.alert--ok { border-color: rgba(94, 212, 162, .4); background: var(--green-soft); color: #aaead0; }
+
+/* —— 表格 —— */
+.table-wrap { overflow-x: auto; }
+.table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.table th { padding: 10px 12px; border-bottom: 1px solid var(--line-2); font-size: 11px; font-weight: 500; letter-spacing: .14em; text-align: left; color: var(--text-3); white-space: nowrap; }
+.table td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.table .right { text-align: right; }
+
+/* —— 键帽 —— */
+.kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px; border: 1px solid var(--line-2); border-bottom-width: 2px; border-radius: 3px; background: rgba(8, 19, 33, .6); font-family: var(--font-mono); font-size: 11px; color: var(--text-2); }
+
+/* —— 加载占位 —— */
+.skeleton { border-radius: var(--radius); background: linear-gradient(100deg, rgba(148, 180, 210, .06) 20%, rgba(148, 180, 210, .15) 40%, rgba(148, 180, 210, .06) 60%) 0 0 / 200% 100%; animation: shimmer 1.5s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* —— 入场动效：同一组里的元素依次升起，--i 是顺序。 —— */
+.reveal { animation: rise .55s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 55ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* —— 页面切换 —— */
+.page-enter-active { transition: opacity .3s var(--ease-out), transform .3s var(--ease-out); }
+.page-leave-active { transition: opacity .12s ease-in; }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; }
+
+@media (max-width: 1000px) {
+  .page { padding: 24px 24px 56px; }
+}
+@media (max-width: 700px) {
+  .page { padding: 20px 16px 40px; }
+  .page-head { margin-bottom: 18px; }
+  .page-sub { font-size: 13px; }
+}
+/* 系统开启“减少动态效果”时，内页的入场、切换和循环动效全部取消；启动页与比赛各自处理，不受这里影响。 */
+@media (prefers-reduced-motion: reduce) {
+  .shell *, .shell *::before, .shell *::after { animation-duration: .01ms !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
