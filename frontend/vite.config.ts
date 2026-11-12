@@ -19,5 +19,7 @@ export default defineConfig(({ mode }) => {
     },
     server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy },
     preview: { host: '127.0.0.1', port: 4173, strictPort: true, proxy },
+    // 启动页的 3D 场景已单独懒加载，约 700 kB，其中 three.js 核心约 600 kB，无法再细分；放宽提示线以免每次构建都告警。
+    build: { chunkSizeWarningLimit: 800 },
   }
 })

@@ -6,3 +6,6 @@ export const oddsSelection = ref<{
   bookmaker_key: string
   label: string
 } | null>(null)
+
+// 在演示盘口上点了“交给 AI 分析”：真实后端不认识演示比赛，聊天页改为展示一段示例对话。
+export const sampleChatRequested = ref(false)

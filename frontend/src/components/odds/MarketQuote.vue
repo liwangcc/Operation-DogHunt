@@ -1,39 +1,60 @@
 <script setup lang="ts">
+// 一个玩法在一家平台的报价：两个方向各一行，盘口数值在前、赔率在后，下面是报价时间。
 import { computed } from 'vue'
+import { STALE_AFTER_MS } from '@/stores/system'
 import type { OddsMarket } from '@/types/odds'
-import { dateTime, signed, team } from './format'
+import { dateTime, price, signed, team } from './format'
+import { outcomeOf } from './lines'
 
 const props = defineProps<{ market?: OddsMarket; kind: 'spreads' | 'totals'; away: string; home: string; now: number }>()
-const selections = computed(() => props.kind === 'spreads' ? [props.away, props.home] : ['Over', 'Under'])
-const old = computed(() => !props.market?.updated_at || props.now - Date.parse(props.market.updated_at) > 15 * 60 * 1000 || Date.parse(props.market.updated_at) > props.now + 60000)
-function outcome(selection: string) { return props.market?.outcomes.find(item => item.selection === selection) }
-function label(selection: string) { return props.kind === 'spreads' ? team(selection)[0] : selection === 'Over' ? '大分' : '小分' }
+
+const rows = computed(() => {
+  const selections = props.kind === 'spreads' ? [props.away, props.home] : ['Over', 'Under']
+  return selections.map((selection, index) => {
+    const outcome = outcomeOf(props.market, selection)
+    return {
+      selection,
+      label: props.kind === 'spreads' ? team(selection)[0] : selection === 'Over' ? '大分' : '小分',
+      side: props.kind === 'spreads' ? (index === 0 ? '客' : '主') : '',
+      point: outcome ? (props.kind === 'spreads' ? signed(outcome.point) : String(outcome.point)) : null,
+      price: outcome ? price(outcome.price) : null,
+    }
+  })
+})
+/** 报价时间太久、缺失，或者比现在还晚（时间异常），都标为待更新。 */
+const old = computed(() => !props.market?.updated_at || props.now - Date.parse(props.market.updated_at) > STALE_AFTER_MS || Date.parse(props.market.updated_at) > props.now + 60000)
 </script>
 
 <template>
-  <div class="market-quote">
-    <div class="market-caption"><span>{{ kind === 'spreads' ? '全场让分' : '全场大小分' }}</span><span>盘口 / 赔率</span></div>
-    <div v-for="selection in selections" :key="selection" class="outcome-row">
-      <span>{{ label(selection) }}</span>
-      <span v-if="outcome(selection)" class="outcome-number">
-        <strong>{{ kind === 'spreads' ? signed(outcome(selection)!.point) : outcome(selection)!.point }}</strong>
-        <small>{{ outcome(selection)!.price?.toFixed(2) ?? '—' }}</small>
-      </span>
-      <span v-else class="quote-missing">暂无报价</span>
+  <div class="quote">
+    <div class="quote-head">
+      <span class="quote-title">{{ kind === 'spreads' ? '全场让分' : '全场大小分' }}</span>
+      <span class="quote-caption">盘口 / 赔率</span>
     </div>
-    <p class="market-time" :class="{ old }">{{ market?.updated_at ? `报价 ${dateTime(market.updated_at)}` : '报价时间未知' }}{{ old && market ? ' · 待更新' : '' }}</p>
+    <div v-for="row in rows" :key="row.selection" class="quote-row" :class="{ missing: !row.point }">
+      <span class="quote-side">{{ row.label }}<small v-if="row.side">{{ row.side }}</small></span>
+      <template v-if="row.point">
+        <strong class="quote-point">{{ row.point }}</strong>
+        <span class="quote-price">{{ row.price }}</span>
+      </template>
+      <span v-else class="quote-none">暂无报价</span>
+    </div>
+    <p class="quote-time" :class="{ old }">{{ market?.updated_at ? `报价 ${dateTime(market.updated_at)}` : '报价时间未知' }}{{ old && market ? ' · 待更新' : '' }}</p>
   </div>
 </template>
 
 <style scoped>
-.market-quote { min-width: 0; }
-.market-caption { display: flex; justify-content: space-between; gap: 4px; font-size: 11px; color: #64796d; margin-bottom: 12px; }
-.market-caption span:last-child { font-size: 10px; color: #8b988f; }
-.outcome-row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-top: 8px; font-size: 12px; }
-.outcome-number { display: flex; align-items: baseline; gap: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.outcome-number strong { font-size: 17px; font-weight: 600; letter-spacing: -.4px; }
-.outcome-number small { font-size: 11px; color: #718578; min-width: 24px; text-align: right; }
-.quote-missing { font-size: 11px; color: #89978d; }
-.market-time { font-size: 9px; color: #87978d; margin: 13px 0 0; }
-.market-time.old { color: #926c39; }
+.quote { min-width: 0; }
+.quote-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.quote-title { font-size: 12px; letter-spacing: .14em; color: var(--text-2); }
+.quote-caption { font-size: 11px; color: var(--text-3); }
+.quote-row { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; padding: 7px 10px 6px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); }
+.quote-side { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.quote-side small { margin-left: 6px; font-size: 11px; color: var(--text-3); }
+.quote-point { font-size: 19px; font-style: italic; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.2; white-space: nowrap; }
+.quote-price { min-width: 36px; font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; color: var(--text-2); }
+.quote-none { font-size: 12px; color: var(--text-3); }
+.quote-row.missing { border-style: dashed; }
+.quote-time { margin: 7px 0 0; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); }
+.quote-time.old { color: var(--amber); }
 </style>
