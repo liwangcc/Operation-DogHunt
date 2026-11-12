@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // NBA 助手：聊天记录、发送与等待、新对话；右侧是这次提问会读到的资料。对话只保存在本次打开的网站里。
-import { computed, nextTick, onActivated, onMounted, ref } from 'vue'
+import { computed, nextTick, onActivated, onMounted, ref, watch } from 'vue'
 import { sendChat } from '@/api/chat'
 import ChatComposer from '@/components/chat/ChatComposer.vue'
 import ChatContext from '@/components/chat/ChatContext.vue'
@@ -27,6 +27,14 @@ const sample = ref(false)
 const contextOpen = ref(false)
 const scroller = ref<HTMLElement | null>(null)
 const composer = ref<InstanceType<typeof ChatComposer> | null>(null)
+
+// 从示例转到真实选场时恢复提问，虚构问答不能进入真实请求的历史。
+watch(oddsSelection, (selection) => {
+  if (!selection || !sample.value) return
+  turns.value = []
+  sample.value = false
+  error.value = ''
+})
 
 const ready = computed(() => !!model.status?.configured && !sample.value)
 const blockedReason = computed(() => {

@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { dateTime } from '@/components/odds/format'
 import { STARTUP_MODULES } from '@/startup/modules'
-import { boardIsDemo, demoEnabled } from '@/stores/demo'
+import { boardIsDemo, demoEnabled, setDemo } from '@/stores/demo'
 import { board, boardStale, checkHealth, health, model, now } from '@/stores/system'
 
 const route = useRoute()
@@ -13,7 +13,7 @@ const current = computed(() => STARTUP_MODULES.find((item) => item.route === rou
 /** 当前页面是否正在显示演示数据。 */
 const showingDemo = computed(() => {
   if (route.name === 'matches') return boardIsDemo.value
-  return demoEnabled.value && current.value?.planned === true
+  return route.name === 'memory' && demoEnabled.value
 })
 const clock = computed(() => new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now.value))
 
@@ -46,9 +46,9 @@ const healthChip = computed(() => {
       </ol>
     </div>
     <div class="strip-right">
-      <RouterLink v-if="showingDemo" to="/settings" class="chip chip--demo" title="当前页面显示的是虚构的演示数据，可在设置里关闭">
+      <button v-if="showingDemo" type="button" class="chip chip--demo" title="当前页面显示的是虚构的演示数据，点击只看真实状态" @click="setDemo(false)">
         <span class="chip-stripes" aria-hidden="true"></span>演示数据
-      </RouterLink>
+      </button>
       <RouterLink to="/matches" class="chip chip--snapshot" :title="board.data?.fetched_at ? '最新保存的盘口快照的采集时间（北京时间）' : '后端还没有保存的盘口快照'">
         <i class="dot" :class="`tone-${snapshot.tone}`" aria-hidden="true"></i><span class="chip-key">快照</span><b>{{ snapshot.text }}</b>
       </RouterLink>
