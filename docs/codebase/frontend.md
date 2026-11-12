@@ -6,10 +6,10 @@
 | --- | --- |
 | 模块标识 | frontend |
 | 核对日期 | 2026-11-12（Asia/Shanghai） |
-| 核对范围 | 2026-11-12 两条线合并后核对：①内页整体重做（外壳、聊天、比赛与盘口、长期记忆、设置、404）与 3D 启动页、沙盘比赛，本地 `b58db4a`、`ed966f3`；②预测记录/复盘档案、效果统计、设置框架，远端 `threehoon/dev`。合并时记录、统计、设置三页采用远端实现，本地同名重做页未接线 |
-| 实现状态 | 部分实现：聊天、比赛与盘口用后端真实数据；预测记录/复盘档案、效果统计为明确标注的演示数据（只在本页内存，不持久化），设置只作本页预览，长期记忆为界面演示；3D 启动页与沙盘比赛可用 |
-| 验证程度 | 合并后 `npm --prefix frontend run build` 通过（类型检查 + `255 modules transformed`）；两条线各自的无头浏览器核对见“验证记录”。合并后未连真实后端、盘口与模型，未做手机实机 |
-| Git 基准 | 本块对应 `dev` 合并 `threehoon/dev`（`10ea61a`）后的状态；记录/统计/设置以远端 `d9394198` 起的实现为准，其余前端改动来自 `b58db4a`、`ed966f3` |
+| 核对范围 | 2026-11-12 增量：内页整体重做（外壳、聊天、比赛与盘口、预测记录、效果统计、长期记忆、设置、404）；此前的 3D 启动页与沙盘比赛已在 `dev` 分支的 `b58db4a` 提交，本次只改了其中两处文案 |
+| 实现状态 | 部分实现：聊天、比赛与盘口用后端真实数据；预测记录、效果统计、长期记忆的界面已做完，但后端没有对应接口，只能用虚构的演示数据展示；设置页的运行状态和本机显示偏好可用 |
+| 验证程度 | 2026-11-12 构建通过；内页在无头浏览器里用模拟的接口返回逐页核对。本机后端没有运行，这一轮没有连过真实后端和真实模型；未验证手机实机 |
+
 ## 负责什么
 
 Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Router 管页面地址之间的切换。前端承担页面布局、运行状态显示、真实模型聊天和本次打开网站时的对话上下文。比赛与盘口在独立 `/matches` 页面，聊天在 `/`；卡片选场后带比赛及平台标识进入聊天，由后端读取报价。预测记录、效果统计、长期记忆三页的界面和计算在前端，数据来源目前只有演示数据。
@@ -48,13 +48,12 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | [domain/](../../frontend/src/domain/settlement.ts) | `settle` / `summarize` / `equityCurve` | 按需求文档第 13、14 节计算赢输走盘、固定 1 单位的模拟盈亏、命中率、ROI、覆盖率、盈亏平衡命中率和命中率的 95% 区间；不依赖界面 |
 | [ChatView.vue](../../frontend/src/views/ChatView.vue) / [components/chat/](../../frontend/src/components/chat/markdown.ts) | `send` / `newChat` / `blocks` | 聊天页的状态与发送逻辑；起始画面、发言、等待卡片、输入区、右侧资料栏，以及把回答里的 Markdown 排成页面元素的 `markdown.ts` |
 | [MatchesView.vue](../../frontend/src/views/MatchesView.vue) / [components/odds/](../../frontend/src/components/odds/MatchBoard.vue) | `MatchBoard` / `NextTip` / `MatchCard` / `MatchDrawer` / `lineSpread` | 独立比赛页：筛选与分组、“下一场开赛”、比赛卡片、全部报价抽屉、各平台盘口分布 |
-| [RecordsView.vue](../../frontend/src/views/RecordsView.vue) / [data/recordPreview.ts](../../frontend/src/data/recordPreview.ts) | `visibleRecords` / `archiveDraft` / `archiveFor` / `viewRecord` / `recordPreview` | 预测记录：6 条虚构示例，选场与复盘档案切换，本页内存归档、补充与整理清单 |
-| [features/reviews/](../../frontend/src/features/reviews/ReviewComposer.vue) | `drafts` / `ready` / `toggleTag` / `visible` / `selected` / `checkedEntries` / `supplement` / `createReview` / `appendSupplement` | 复盘档案：按比赛保留草稿、摘要与标签、空白拦截；档案筛选、详情、追加补充、跨筛选多选与整理清单；数据只在本页内存 |
-| [StatisticsView.vue](../../frontend/src/views/StatisticsView.vue) / [features/statistics/](../../frontend/src/features/statistics/data.ts) | `scopedRecords` / `summary` / `comparison` / `demoRecords` / `summarize` / `dailyProfits` / `ProfitChart` | 效果统计：浅色看板，指标卡、日收益曲线、玩法对比与状态分布；固定演示数据，与记录页示例不共享 |
+| [RecordsView.vue](../../frontend/src/views/RecordsView.vue) / [components/records/](../../frontend/src/components/records/RecordDrawer.vue) | `RecordDrawer` / `recordsToCsv` | 预测记录的筛选、汇总、表格、详情抽屉和 CSV 导出 |
+| [StatisticsView.vue](../../frontend/src/views/StatisticsView.vue) / [components/stats/](../../frontend/src/components/stats/EquityChart.vue) | `EquityChart` / `HitRing` / `OutcomeBars` / `WeeklyBars` | 效果统计的指标卡、累计盈亏曲线、结算分布、按周表现和按策略版本对比 |
 | [MemoryView.vue](../../frontend/src/views/MemoryView.vue) / [components/memory/](../../frontend/src/components/memory/MemoryRack.vue) | `MemoryRack` / `MemoryInspector` | 长期记忆的父块机柜、子块详情与操作、维护记录 |
-| [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `sections` / `draft` / `savePreview` / `resetPreview` | 设置：五类按钮框架，选项与开关只作当前页预览，不写浏览器或后台存储 |
-| [components/records/](../../frontend/src/components/records/RecordDrawer.vue) / [components/stats/](../../frontend/src/components/stats/EquityChart.vue) / [stores/records.ts](../../frontend/src/stores/records.ts) | `RecordDrawer` / `recordsToCsv` / `EquityChart` / `predictionRecords` | 本地版记录与统计内页实现；合并 `threehoon/dev` 后这三页改用远端实现，这些文件暂未接入路由与页面，去向待定 |
-| [components/common/](../../frontend/src/components/common/SideDrawer.vue) | `SideDrawer` / `DemoRibbon` / `EmptyState` / `TeamMark` / `StationIcon` | 侧边抽屉（焦点不外漏）、演示数据提示带、空状态、球队标记、模块图标 || [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `getHealth` | GET 为 5 秒超时，POST 聊天按后端超时加 10 秒；脱敏错误提示及格式核对 |
+| [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `checks` | 运行状态读数、本机显示偏好、由后端决定的规则（只读） |
+| [components/common/](../../frontend/src/components/common/SideDrawer.vue) | `SideDrawer` / `DemoRibbon` / `EmptyState` / `TeamMark` / `StationIcon` | 侧边抽屉（焦点不外漏）、演示数据提示带、空状态、球队标记、模块图标 |
+| [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `getHealth` | GET 为 5 秒超时，POST 聊天按后端超时加 10 秒；脱敏错误提示及格式核对 |
 | [vite.config.ts](../../frontend/vite.config.ts) | `proxy` | 本机开发与预览时将 `/api` 转给后端 |
 | [package.json](../../frontend/package.json) | `scripts` / `engines` | 开发、类型检查、构建命令及 Node.js 要求 |
 
@@ -73,22 +72,16 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | 后端连接检查 | 有真实请求、响应核对、超时与手动重查逻辑；回到标签页且距上次检查超过 60 秒时自动再查一次 | `getHealth`、`getJson`、`stores/system.ts` 的 `checkHealth` |
 | 比赛与盘口 | 独立页面按北京时间筛选今天、明天、近 7 天、全部已开盘，按平台展示报价；选好平台后交给 AI | [MatchBoard.vue](../../frontend/src/components/odds/MatchBoard.vue)、[MatchCard.vue](../../frontend/src/components/odds/MatchCard.vue)、[MarketQuote.vue](../../frontend/src/components/odds/MarketQuote.vue) |
 | AI 聊天 | 每次读取最新保存快照；选场时只使用该比赛该平台，问题历史保留选场标签；等待中阻止重复提交、失败保留输入、不自动重试 | `ChatView.vue`、[chat.ts](../../frontend/src/api/chat.ts)、[类型](../../frontend/src/types/api.ts) |
-| 预测记录与复盘档案 | 6 条选场示例和 2 份初始档案；可填写、归档、查看、追加补充、筛选及勾选整理；只在本页内存中联动，刷新或离页重置，不持久化或执行分析 | [RecordsView](../../frontend/src/views/RecordsView.vue)、[档案 UI](../../frontend/src/features/reviews/ReviewArchive.vue)、[填写 UI](../../frontend/src/features/reviews/ReviewComposer.vue)、[示例模型](../../frontend/src/features/reviews/preview.ts) |
-| 效果统计 | A 浅色方案：总体指标、累计收益曲线、玩法对比、状态分布与筛选；仅演示，正式统计待接入；与预测记录示例不共享 | [StatisticsView](../../frontend/src/views/StatisticsView.vue)、[统计数据与计算](../../frontend/src/features/statistics/data.ts)、[收益曲线](../../frontend/src/features/statistics/ProfitChart.vue) |
-| 长期记忆 | 仅界面：父块机柜、子块详情与操作、维护记录，演示内容只在本页内存 | [MemoryView](../../frontend/src/views/MemoryView.vue)、[MemoryRack](../../frontend/src/components/memory/MemoryRack.vue) |
-| 设置 | 基础偏好、数据与盘口、AI 与调用、分析与记录、数据管理五类；可试选与暂存本页预览，未改实际配置；导出、导入和管理连接禁用待接入 | [SettingsView](../../frontend/src/views/SettingsView.vue) |
+| 预测记录、效果统计、长期记忆 | 仅界面：页面、筛选、图表、结算与统计计算都已实现，但后端没有保存预测、结算赛果和记忆的接口，没有任何真实数据；演示数据打开时显示虚构联赛的内容并明确标注，关闭时显示空状态 | [RecordsView](../../frontend/src/views/RecordsView.vue)、[StatisticsView](../../frontend/src/views/StatisticsView.vue)、[MemoryView](../../frontend/src/views/MemoryView.vue)、`stores/records.ts`，详见文末 |
+| 设置 | 部分实现：运行状态是真实读数，显示偏好保存在本机浏览器；数据源、模型、记录规则等只能查看，页面上不能修改 | [SettingsView](../../frontend/src/views/SettingsView.vue)、`stores/preferences.ts` |
 | 跨页面业务状态 | Vue 的 ref / reactive 共享选场、运行状态和显示偏好，KeepAlive 保留聊天；没有新增状态库 | [stores 说明](../../frontend/src/stores/README.md) |
 | 3D 启动页 | 部分实现：写实风格的实时 3D 指挥室、模块菜单、点选设备、开场运镜与进入流程可用；全部由代码生成，未经美术评审，未在手机实机验证 | `StartupView.vue`、`startup/`，详见文末 |
 | 沙盘篮球比赛 | 部分实现：从启动页点“开始比赛”进入的 3v3 街机篮球，键盘或手柄操作，可完整打完一场；当天按试玩意见做过第二轮（衔接、难度、球员模型与动作、球馆），第二轮的手感、难度与听感只经过自动化检查，还没有真人试玩；不支持触屏 | `game/`、`GameHud.vue`，详见文末 |
+
 ## 验证记录
 
 | 日期 | 方式 | 实际结果与边界 |
 | --- | --- | --- |
-| 2026-11-12 | 合入 dev 前增量核对：`npm --prefix frontend run build`、Node 离线断言、`git diff --check` | 类型检查通过，`81 modules transformed / built in 143ms`；默认统计 100 笔结算、58 赢 42 输、+8.6 元、8.6% ROI 与曲线一致，特殊状态及空样本通过；两份初始档案、同场玩法关联、空白拦截、摘要回退和追加保留原文通过。本轮未重跑浏览器，以下浏览器结果为历史证据；未调用模型、更新盘口或验证正式存储 |
-| 2026-11-12 | `npm --prefix frontend run build`、Node 离线断言与浏览器 `/records` | 最终 `81 modules transformed / built in 144ms`，含同期设置/统计；初始档案 2，新归档后为 3；补充保留原文、返回对应预测、日期/玩法/标签/搜索、跨筛选多选及整理清单通过；空白后筛选清理、刷新恢复 2 份示例通过；1440px/390px 无横向溢出，warn/error 为 `[]`。离线核对同场两个玩法关联、空白输入拦截和追加不修改原文；不代表正式存储已实现 |
-| 2026-11-12 | `npm --prefix frontend run build` 与浏览器 `/settings` | `74 modules transformed / built in 158ms`，含类型检查；五类切换、时区/赔率/平台/过期/等待/玩法选择、密度按钮、开关、暂存与还原通过；暂存后跨分类保留，刷新后恢复；导出与导入禁用；1280px 与 390px 无横向溢出（390px 覆盖五类），warn/error 为 `[]`。未验证真实设置保存，也未调用模型或更新盘口 |
-| 2026-11-12 | `npm --prefix frontend run build`、Node 离线断言、浏览器 `/statistics` | 最终 `73 modules transformed / built in 131ms`，含同期预测记录改动；演示 100 笔、58 赢 42 输、+8.6 单位、8.6% ROI，分玩法 +6.2/+2.4 与曲线终点一致；走盘投入、取消/待结算排除及零分母通过；日期/玩法/版本/来源筛选、无样本、正式待接入、Home/End 明细及跳转记录通过，1440px/390px 无横向溢出，页面 warn/error 为 `[]`；未验证真实统计接口 |
-| 2026-11-12 | `npm --prefix frontend run build` 与浏览器 `/records` | 最终 `68 modules transformed / built in 113ms`，含类型检查；6 条示例，按让分筛选为 3、叠加赢盘为 1；待复盘为 2、叠加日期为 1；详情切换、搜索无结果和空白状态通过；1280px、390px 无横向溢出，控制台 warn/error 为 `[]`；截图见本次交接 |
 | 2026-11-11 | [项目骨架交接中的历史运行记录](../handoff/2026-11-11-Vue与FastAPI项目骨架.md) | `npm run build` 成功，包含类型检查；记录浏览器显示连接成功、记忆页刷新正常，前端转发健康检查 HTTP 200；未验证手机实机与业务流程 |
 | 2026-11-11 | 本轮 `npm run build` | 类型检查与构建通过，首次输出 `52 modules transformed / built in 68ms`；保留同期盘口代码后最终输出 `63 modules transformed / built in 104ms` |
 | 2026-11-11 | 本轮浏览器实际发送 | 显示 `gpt-6.1-sol` 已配置，发送后先显示等待，再显示“网页模型连接成功。”；按钮恢复，无自动二次提交 |
@@ -102,36 +95,6 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 模型每次读取的是保存的快照，不会自动更新外部盘口；当前没有完整赛程、实时比分或伤病查询。
 - 当前轮最多 20 次提问；页面切换保留对话，刷新或关闭网站会丢失对话，没有长期记忆、正式预测保存、逐字显示或停止生成。
 - “模型已配置”不是在线探测；打开页面、检查配置不会调用付费模型。
-- 预测记录与复盘档案仅为 UI 预览，不调用业务接口；示例对阵、盘口、赛果均虚构。每条预测为一个玩法，档案按比赛归组；归档后本页已复盘/待复盘统计联动，但不是正式持久化。原文保留，补充另存内存条目；刷新或离页后恢复。真实记录、赛果、结算、数据库、多人隔离和汇总分析后续实现。
-- 效果统计独立使用固定日期演示数据，默认最近 30 天为 2026-10-14 至 2026-11-12；与记录页六条示例不是同一数据集。只支持导航连接，尚未共享筛选或正式记录；选择“查看正式数据”只显示待接入说明，不请求不存在的接口。
-
-## 设置按钮框架（2026-11-12）
-
-`SettingsView` 替换占位页，沿用深绿与浅色风格，样式 scoped，不修改公共布局。桌面分类在左、内容在右；950px 以下分类变成横排，700px 以下表单选择铺满一行。使用原生 select、带 label 的 switch、带 aria-pressed 的密度按钮；未接入功能禁用并提供原因。
-
-`draft` 是预览选项，`saved` 仅记录本次页面内已暂存值，`dirty` 决定暂存按钮状态。分类切换保留预览；App 仅缓存 ChatView，因此离开设置或刷新会重新初始化，不写 localStorage、不请求设置接口、不读取密钥。时区、赔率、超时等字段尚未应用于其他页面，所有默认值只代表框架示例，不能当作已确定的业务规则。后续需确定设置范围、保存接口与实际应用位置；运行状态与真实额度也未接入。本次截图和交接见[设置按钮框架](../handoff/2026-11-12-设置按钮框架.md)。
-
-## 浅色效果统计 UI（2026-11-12）
-
-用户选择 A 浅色研究看板，并确认首屏优先整体表现和收益走势。`StatisticsView` 用同一组选择计算四张指标卡、日收益曲线与记录分布，比较卡独立展示相同日期/版本/来源下的两个玩法，点击“查看走势”切换主看板玩法。统计按选择而非比赛计数；命中率排除走盘，ROI 分母包含已结算走盘投入，取消和待结算不计入投入，零样本显示横线。
-
-默认演示模式有醒目标记，可切换正式待接入状态。日期筛选以固定演示日为基准，来源分开计算；无匹配时提供重置。曲线使用内置 SVG 和 ResizeObserver，不新增图表依赖；手机指标为两列，比较卡为单列，轴标签保持可读，键盘方向键和 Home/End 可查看日收益。筛选只在当前页面内保留，离页或刷新重置。
-
-本轮只修改统计专用源码，保留同期 `RecordsView`、公共样式和导航；真实记录字段、日期口径与赛果统计服务仍需在数据接入阶段统一。完整说明和实际截图见[效果统计浅色 UI](../handoff/2026-11-12-效果统计浅色UI.md)。
-
-## 复盘档案 UI（2026-11-12）
-
-用户确认先积累每场复盘，之后自行选择材料集中分析和调整策略，要求与设置页并行开发。新增模块限定在 `features/reviews/`，仅修改 `RecordsView` 接入；不改设置、统计、公共样式、布局、路由或依赖。档案入口为 `/records` 内的两个按钮，使用 `v-show` 切换以保留本页预览状态。
-
-一场比赛归为一份档案，关联该场预测玩法；当前演示以比赛日期和主客队形成归组 key，真实接入必须改用可靠赛事标识。`archiveDraft` 防止同场重复归档；只有已有结算示例的比赛能写复盘。原始内容与独立补充数组分别显示，`appendSupplement` 返回新条目而不修改原文；摘要可由用户填写，空缺时取原文首行，不调用 AI。
-
-档案支持日期、玩法、标签与全文搜索（含补充），按最近更新时间显示。筛选隐藏已勾选材料时保留选择，并明确显示总选择数；可查看整理清单，汇总分析按钮禁用。归档不会修改策略。空白预览清理档案筛选和勾选，返回示例保留当前页归档；刷新或离页后重置。完整范围、并行边界和截图见[复盘档案 UI 交接](../handoff/2026-11-12-复盘档案UI.md)。
-
-## 个人选场复盘 UI（2026-11-12）
-
-用户明确先做自己的选场复盘，并要求当前只搭 UI。`RecordsView` 直接引用 `data/recordPreview.ts`，替代原占位组件，不引入依赖或修改公共样式。桌面为列表与详情并排，1200px 以下详情排到列表下方，700px 以下概览为两列、筛选纵向排列。列表使用按钮支持键盘选择；状态有文字区分，支持无动画偏好。
-
-比赛按日期和时间降序排列；筛选使当前选择不可见时详情显示第一条可见记录，没有可见记录时隐藏详情。详情中的原笔记试填已由 `ReviewComposer` 和档案入口替代；示例/空白切换只清理筛选和未归档编辑状态，不清除当前页已归档内容。去选比赛仅跳转现有 `/matches`，不自动取数或发起分析。初版交付与历史截图见[预测记录 UI 框架](../handoff/2026-11-12-预测记录UI框架.md)，当前档案流程以上节为准。
 
 ## 首次首页盘口接入历史（2026-11-11，入口已由下节替代）
 
@@ -218,9 +181,9 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 边界：第二轮的改动还没有真人试玩过，难度是否合适、动作看起来是否自然只能由使用者自己判断；电脑的优势幅度是实现时定的，使用者没有给过具体数字。无头浏览器听不到声音，所有音效的听感未经确认；手柄输入的代码没有用真实手柄测过；未在手机、Safari、Firefox、核显或低性能设备上运行，观众和球员的面数在弱显卡上是否吃力未知；电脑 AI 只有一个难度；页面空闲时会自动预加载比赛场景，对只想进入系统的人是一笔额外的显存和后台计算开销。
 
-## 内页重新设计（2026-11-12，本地实现，随 `ed966f3` 提交）
+## 内页重新设计（2026-11-12，本地实现，未提交）
 
-使用者要求“里面的页面也可以开始设计了，你全权负责”。这对应需求文档第 17 节“页面原型”阶段；风格、演示数据的做法和下面列出的几项取舍都是本地决定，未经项目负责人确认。基准为 `dev` 分支的 `b58db4a`，已随 `ed966f3` 提交；合并 `threehoon/dev` 时记录、统计、设置三页改用远端实现，见文末“合并说明”。
+使用者要求“里面的页面也可以开始设计了，你全权负责”。这对应需求文档第 17 节“页面原型”阶段；风格、演示数据的做法和下面列出的几项取舍都是本地决定，未经项目负责人确认。基准为 `dev` 分支的 `b58db4a`，改动只在本地工作区。
 
 **整体风格：** 内页从原来的浅绿色页面改为延续启动页的深色控制台：同一套深蓝底色、青色主色和琥珀色提醒色，标题沿用启动页的斜体粗字和斜切色块。每个页面对应启动页里的一个工位，顶部状态条显示“指挥室 / 工位 / 页面”。只有深色一套配色。
 
@@ -250,14 +213,14 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 赔率按设置里的格式显示（十进制或香港盘），内部仍是十进制。
 - 后端读不到任何比赛、且演示数据打开时，用演示盘口顶上，提示带里同时写明真实状态（例如“无法连接盘口服务”）。演示比赛的“交给 AI 分析”打开的是示例对话，不会把演示比赛发给后端。
 
-**预测记录（`/records`）、效果统计（`/statistics`）、长期记忆（`/memory`）：** 按需求文档 4.3、4.4、4.5 做的界面。合并后记录与统计以远端实现为准，本地两页实现与 `stores/records.ts` 仍在仓库、未接入路由；下面三条保留为本地版的设计记录，长期记忆仍是本地版本。
+**预测记录（`/records`）、效果统计（`/statistics`）、长期记忆（`/memory`）：** 按需求文档 4.3、4.4、4.5 做的界面。
 
 - 记录：按时间、玩法、结果、来源（赛前记录 / 历史模拟 / 人工补录）、策略版本、判断来源（系统 / 个人）和球队筛选；表格上方是当前筛选的汇总；点一行看详情，分判断、当时的盘口、依据、复盘四块，复盘里写出结算算式；可把当前筛选结果导出为 CSV。
 - 统计：命中率（带 95% 区间和盈亏平衡刻度）、模拟盈亏、模拟 ROI、选择覆盖率四张指标卡，累计盈亏曲线（鼠标或左右方向键逐条查看）、结算分布、按周表现、按策略版本对比。三种记录来源不混在一起，每个比例旁边都有样本数；已分出输赢的样本少于 100 时提示区间有多宽。
 - 记忆：每个父块画成一台机柜，子块是柜里的插槽，指示灯表示状态（生效中、候选、已替代、已过期、已停用、已归档）；选中后看内容、来源、适用范围、有效期和引用次数，可以修改（存为新版本）、停用、把候选确认为固定要求、忘记（8 秒内可撤销）；右侧是维护记录。
 - 这三页没有真实数据来源。`stores/records.ts` 是预测记录唯一的取数入口，等后端有接口后改这里即可；记忆页在 `MemoryView.vue` 里直接载入演示内容。结算和统计公式在 `domain/` 里，和数据来源无关。
 
-**设置（`/settings`）：** 合并后采用远端实现（五类按钮框架，见“设置按钮框架”一节），本地版本未接入路由，下面保留为本地版设计记录。本地版运行状态四项（后端连接含往返毫秒数、模型配置、盘口快照、浏览器）都是真实读数，可单独或全部重新检查。显示偏好有赔率格式、默认报价平台（从真实快照里出现过的平台中选）、动态背景、演示数据，保存在浏览器的 `localStorage` 里。“由后端决定的规则”列出数据源与更新频率、统一参考平台、模型与超时、额度提醒、正式记录规则和密钥，只读，不提供修改入口。
+**设置（`/settings`）：** 运行状态四项（后端连接含往返毫秒数、模型配置、盘口快照、浏览器）都是真实读数，可单独或全部重新检查。显示偏好有赔率格式、默认报价平台（从真实快照里出现过的平台中选）、动态背景、演示数据，保存在浏览器的 `localStorage` 里。“由后端决定的规则”列出数据源与更新频率、统一参考平台、模型与超时、额度提醒、正式记录规则和密钥，只读，不提供修改入口。
 
 **演示数据的做法（本地决定，需要负责人确认）：**
 
@@ -268,7 +231,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 **其他取舍：**
 
-- 删除了 `FeaturePlaceholder.vue`、`BackendStatus.vue` 和 `composables/useBackendHealth.ts`，连接检查并入 `stores/system.ts`。远端实现删除了这些文件所依赖的旧公共组件，合并后不再存在。
+- 删除了 `FeaturePlaceholder.vue`、`BackendStatus.vue` 和 `composables/useBackendHealth.ts`，连接检查并入 `stores/system.ts`。
 - 启动页菜单和站点卡片上，记录、统计、记忆三项的“待开发”标记改为“预览”；设置不再标记。
 - 后端未连接时不再在每页顶部显示一行错误文字，改为状态条上红色的“后端未连接”，完整原因在鼠标悬停提示和设置页里；聊天和比赛页仍各自显示自己的错误。
 - `index.html` 加了深色底色，打开瞬间不再闪白。
@@ -289,8 +252,8 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 边界：这一轮没有连接真实后端、真实盘口和真实模型，真实回答的排版（尤其是很长或格式不规整的回答）未经实际检验；未在手机实机、Safari、Firefox、核显或低性能设备上运行，背景在弱显卡上的开销未知；界面只做了截图自检，没有经过项目负责人或美术评审；导出的 CSV 没有在 Excel 里实际打开过；键盘操作只核对了命令面板和抽屉，没有用读屏软件走过完整流程。聊天把发送方式改成 Ctrl/⌘+Enter 是出于“发送要花钱”的考虑自行决定的。
 
-## 合并说明（2026-11-12）
+## 本分支说明（备选方案）
 
-`dev` 合并 `threehoon/dev`（`10ea61a`）时，`RecordsView.vue`、`StatisticsView.vue`、`SettingsView.vue` 三页双方各自重写过。合并结论：三页采用远端实现（个人选场复盘 UI、浅色效果统计 UI、设置按钮框架），本地版本不接入路由；本地版专属文件 `components/records/RecordDrawer.vue`、`components/stats/EquityChart.vue`、`stores/records.ts` 仍留在仓库，当前没有任何文件引用它们，去向待负责人决定。长期记忆页没有冲突，继续使用本地版本。
+这条分支把 `RecordsView.vue`、`StatisticsView.vue`、`SettingsView.vue` 三页换回本地重做版（站台式深色界面），其余内容与第一批 PR 相同。远端 `threehoon/dev` 里的同名实现（个人选场复盘 UI、浅色效果统计 UI、设置按钮框架）保留在 Git 历史中，若采用本分支，它们的源码模块（`frontend/src/features/reviews/`、`frontend/src/features/statistics/`、`frontend/src/data/recordPreview.ts`）会变成未被引用的文件，需要一并决定去留。
 
-`CODEBASE.md` 与本节表格已按合并后状态改写；两条线各自的验证记录保留在“验证记录”表里，合并后只补做了一件事：`npm --prefix frontend run build`（类型检查 + `255 modules transformed`）通过，`frontend/dist/` 仍由 `.gitignore` 排除。合并后未连接真实后端、盘口或模型，也未做手机实机验证。
+验证：`npm --prefix frontend run build` 通过（类型检查 + `265 modules transformed`）。

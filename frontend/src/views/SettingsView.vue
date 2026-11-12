@@ -1,182 +1,254 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+// 设置：真实的运行状态读数（后端、模型、盘口快照、浏览器）、保存在本机的显示偏好，以及需要后端支持、暂时只能看的规则。
+import { computed, onMounted, ref } from 'vue'
+import { ago, dateTime, price } from '@/components/odds/format'
+import { demoEnabled, setDemo } from '@/stores/demo'
+import { preferences, resetPreferences, storageAvailable } from '@/stores/preferences'
+import { board, boardBusy, boardStale, checkHealth, checkModel, health, loadBoard, model, now } from '@/stores/system'
 
-const sections = [
-  { id: 'general', title: '基础偏好', subtitle: '显示与阅读习惯', icon: 'sliders', description: '让每一次查看，都符合你的习惯。' },
-  { id: 'data', title: '数据与盘口', subtitle: '来源、平台与更新', icon: 'database', description: '管理分析时参考的数据与报价。' },
-  { id: 'model', title: 'AI 与调用', subtitle: '模型、超时与额度', icon: 'spark', description: '为 AI 分析预留清晰的调用边界。' },
-  { id: 'analysis', title: '分析与记录', subtitle: '玩法与记录规则', icon: 'notes', description: '从赛前判断到赛后复盘，留下完整依据。' },
-  { id: 'storage', title: '数据管理', subtitle: '记录、记忆与备份', icon: 'folder', description: '在这里管理积累下来的判断与记忆。' },
-] as const
-type SectionId = typeof sections[number]['id']
-const active = ref<SectionId>('general')
-const current = computed(() => sections.find(section => section.id === active.value)!)
-const iconPaths: Record<string, string> = {
-  sliders: 'M4 7h16M4 17h16M8 4v6M16 14v6',
-  database: 'M20 6c0 2-16 2-16 0s16-2 16 0v12c0 3-16 3-16 0V6m0 6c0 3 16 3 16 0',
-  spark: 'm12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z',
-  notes: 'M8 4h11v16H5V4h3m0-1h8v4H8V3m0 9h8m-8 4h5',
-  folder: 'M3 7V5h7l2 2h9v12H3V7Zm0 3h18',
+const EXAMPLE_PRICE = 1.91
+
+const webgl = ref<boolean | null>(null)
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+/** 真实快照里出现过的报价平台，按名称排序。 */
+const bookmakers = computed(() => {
+  const seen = new Map<string, string>()
+  for (const event of board.data?.events ?? []) for (const book of event.bookmakers) seen.set(book.key, book.title)
+  return Array.from(seen, ([key, title]) => ({ key, title })).sort((a, b) => a.title.localeCompare(b.title))
+})
+/** 偏好里记着、但当前快照里没有的平台，仍然列出来，免得悄悄丢掉。 */
+const missingBook = computed(() => (preferences.bookmaker && !bookmakers.value.some((book) => book.key === preferences.bookmaker) ? preferences.bookmaker : ''))
+
+const checks = computed(() => [
+  {
+    key: 'health',
+    name: '后端连接',
+    tone: health.status === 'online' ? 'ok' : health.status === 'checking' ? 'wait' : 'bad',
+    state: health.status === 'online' ? '已连接' : health.status === 'checking' ? '检查中' : '未连接',
+    detail: health.info ? `${health.info.app} v${health.info.version} · ${health.info.environment} · 往返 ${health.latencyMs} 毫秒` : health.message,
+    checkedAt: health.checkedAt,
+    note: '只代表后端能回应，不代表模型、盘口或数据库可用。',
+    action: '重新检查',
+    busy: health.status === 'checking',
+    run: checkHealth,
+  },
+  {
+    key: 'model',
+    name: '模型配置',
+    tone: model.checking ? 'wait' : model.status?.configured ? 'ok' : model.error ? 'bad' : 'off',
+    state: model.checking ? '读取中' : model.status?.configured ? '已配置' : model.error ? '读取失败' : '未配置',
+    detail: model.status?.configured ? `${model.status.model} · 单次最长等待 ${model.status.timeout_seconds} 秒` : model.error || '后端没有可用的模型配置，聊天暂时不能提问。',
+    checkedAt: model.checkedAt,
+    note: '只看是否已配置，不是在线探测；检查不会调用模型，也不消耗额度。',
+    action: '检查配置',
+    busy: model.checking,
+    run: checkModel,
+  },
+  {
+    key: 'board',
+    name: '盘口快照',
+    tone: board.loading ? 'wait' : !board.data?.fetched_at ? (board.error ? 'bad' : 'off') : boardStale.value ? 'warn' : 'ok',
+    state: board.loading ? '读取中' : !board.data?.fetched_at ? (board.error ? '读取失败' : '尚无数据') : boardStale.value ? '待更新' : '已保存',
+    detail: board.data?.fetched_at
+      ? `${dateTime(board.data.fetched_at)} 采集 · ${board.data.events.length} 场比赛 · ${bookmakers.value.length} 家平台${board.data.quota?.remaining != null ? ` · 接口额度剩余 ${board.data.quota.remaining}` : ''}`
+      : board.error || board.data?.message || '后端还没有保存的盘口快照。',
+    checkedAt: 0,
+    note: '读取的是后端保存的最新快照，不向供应商取新数据；更新盘口请到比赛与盘口页手动操作。',
+    action: '重新读取',
+    busy: boardBusy.value,
+    run: loadBoard,
+  },
+])
+
+function recheckAll(): void {
+  void checkHealth()
+  void checkModel()
+  void loadBoard()
 }
-const defaults = {
-  timezone: 'Asia/Shanghai', oddsFormat: 'decimal', density: 'comfortable',
-  platform: 'selected', updateMode: 'manual', staleMinutes: '15',
-  model: 'current', timeout: '120', retry: '0', budgetNotice: true,
-  market: 'both', recordMode: 'confirm', includeSnapshot: true, reviewReminder: false,
-}
-const draft = reactive({ ...defaults })
-const saved = ref({ ...defaults })
-const notice = ref('')
-const dirty = computed(() => JSON.stringify(draft) !== JSON.stringify(saved.value))
-const changed = computed(() => JSON.stringify(draft) !== JSON.stringify(defaults))
-function savePreview() {
-  saved.value = { ...draft }
-  notice.value = '已暂存本页预览，尚未应用到网站；刷新或离开设置页后恢复。'
-}
-function resetPreview() {
-  Object.assign(draft, defaults)
-  saved.value = { ...defaults }
-  notice.value = '已还原初始预览。网站实际配置未改变。'
-}
+
+onMounted(() => {
+  try {
+    webgl.value = !!document.createElement('canvas').getContext('webgl')
+  } catch {
+    webgl.value = false
+  }
+})
 </script>
 
 <template>
-  <section class="settings-page" aria-labelledby="settings-title">
-    <header class="settings-heading">
+  <section class="page settings" aria-labelledby="settings-heading">
+    <header class="page-head reveal">
       <div>
-        <span class="settings-eyebrow"><i></i> YOUR WORKSPACE</span>
-        <div class="settings-title"><h1 id="settings-title">设置</h1><span class="preview-badge">界面预览</span></div>
-        <p>把偏好设好，把注意力留给比赛。</p>
-      </div>
-      <div class="heading-actions">
-        <button class="secondary-button" :disabled="!changed" @click="resetPreview">还原预览</button>
-        <button class="primary-button" :disabled="!dirty" @click="savePreview"><span aria-hidden="true">✓</span> 暂存预览</button>
+        <p class="overline">Station 06 · Control Panel</p>
+        <h1 id="settings-heading" class="page-title">设置</h1>
+        <p class="page-sub">查看运行状态，调整这台设备上的显示方式。数据源、模型和记录规则由后端决定，目前只能查看。</p>
       </div>
     </header>
-    <div class="preview-note"><span aria-hidden="true">i</span><p>先试试布局与操作。这里的选项仅供预览，暂不会改变网站配置。</p><span class="note-tag">功能逐步接入</span></div>
 
-    <div class="settings-layout">
-      <aside class="settings-sidebar">
-        <nav aria-label="设置分类">
-          <button v-for="section in sections" :key="section.id" :aria-current="active === section.id ? 'true' : undefined" :class="{ active: active === section.id }" :aria-controls="active === section.id ? `settings-${section.id}` : undefined" @click="active = section.id">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path :d="iconPaths[section.icon]" /></svg>
-            <span><strong>{{ section.title }}</strong><small>{{ section.subtitle }}</small></span><span class="nav-arrow" aria-hidden="true">›</span>
-          </button>
-        </nav>
-        <div class="sidebar-tip"><span class="tip-mark" aria-hidden="true">↗</span><strong>按你的节奏，一步步完善</strong><p>先搭好设置入口，后续再连接真实配置与保存功能。</p></div>
-      </aside>
+    <div class="columns">
+      <div class="column">
+        <article class="panel panel--ticks panel-pad reveal" style="--i: 1" aria-labelledby="status-heading">
+          <header class="panel-head">
+            <h2 id="status-heading" class="section-title">运行状态<small>都是真实读数</small></h2>
+            <button type="button" class="btn btn--sm" @click="recheckAll">全部重新检查</button>
+          </header>
+          <ul class="checks">
+            <li v-for="check in checks" :key="check.key">
+              <i class="dot" :class="[`tone-${check.tone}`, { 'dot--live': check.tone === 'ok' }]" aria-hidden="true"></i>
+              <div class="check-main">
+                <p class="check-name">{{ check.name }}<strong :class="`tone-${check.tone}`">{{ check.state }}</strong><time v-if="check.checkedAt" class="num">{{ ago(check.checkedAt, now) }}检查</time></p>
+                <p class="check-detail num">{{ check.detail }}</p>
+                <p class="check-note">{{ check.note }}</p>
+              </div>
+              <button type="button" class="btn btn--sm btn--quiet" :disabled="check.busy" @click="check.run()">{{ check.action }}</button>
+            </li>
+            <li>
+              <i class="dot" :class="webgl === false ? 'tone-warn' : 'tone-ok'" aria-hidden="true"></i>
+              <div class="check-main">
+                <p class="check-name">这个浏览器</p>
+                <p class="check-detail">3D 画面{{ webgl === null ? '检查中' : webgl ? '可用' : '不可用（启动页和动态背景会退回静态画面）' }} · 本地存储{{ storageAvailable ? '可用' : '不可用（偏好只在本次打开期间有效）' }} · {{ reducedMotion ? '系统已开启“减少动态效果”' : '动效正常显示' }}</p>
+              </div>
+            </li>
+          </ul>
+        </article>
 
-      <div class="settings-main">
-        <section :id="`settings-${active}`" :key="active" class="settings-panel" :aria-labelledby="`title-${active}`">
-          <header class="panel-heading"><div><span class="panel-eyebrow">{{ String(sections.findIndex(item => item.id === active) + 1).padStart(2, '0') }} / PREFERENCES</span><h2 :id="`title-${active}`">{{ current.title }}</h2><p>{{ current.description }}</p></div><svg viewBox="0 0 24 24" aria-hidden="true"><path :d="iconPaths[current.icon]" /></svg></header>
+        <article class="panel panel-pad reveal" style="--i: 3" aria-labelledby="pending-heading">
+          <header class="panel-head"><h2 id="pending-heading" class="section-title">由后端决定的规则<small>暂时只能查看</small></h2></header>
+          <ul class="locked">
+            <li>
+              <div><h3>数据源与更新频率</h3><p>盘口目前只能手动更新一次；定时同步和更新频率要等后台任务实现后才能设置。</p></div>
+              <span class="locked-value">手动更新</span><span class="tag tag--warn">待后端支持</span>
+            </li>
+            <li>
+              <div><h3>统一的参考平台</h3><p>正式预测需要固定使用一家平台的报价，前后才好比较。现在只有右侧“默认报价平台”这个本机偏好。</p></div>
+              <span class="locked-value">未选定</span><span class="tag tag--warn">待后端支持</span>
+            </li>
+            <li>
+              <div><h3>模型、超时与重试</h3><p>模型名称和等待时限写在后端配置里，页面只读。当前不自动重试；重试上限和单任务调用上限待实现。</p></div>
+              <span class="locked-value num">{{ model.status?.configured ? `${model.status.model} · ${model.status.timeout_seconds} 秒` : '未配置' }}</span><span class="tag">只读</span>
+            </li>
+            <li>
+              <div><h3>额度与费用提醒</h3><p>记录每次调用的用量，设置单任务和每天的上限，接近上限时提醒。</p></div>
+              <span class="locked-value">未设置</span><span class="tag tag--warn">待后端支持</span>
+            </li>
+            <li>
+              <div><h3>正式记录规则</h3><p>什么时候把一次分析锁定为正式预测：手动标记，还是开赛前定时锁定。锁定后不能被新分析覆盖。</p></div>
+              <span class="locked-value">未确定</span><span class="tag tag--warn">待后端支持</span>
+            </li>
+            <li>
+              <div><h3>访问密钥</h3><p>盘口和模型的密钥只保存在后端，不会出现在页面、聊天、记忆或普通日志里，这里也不提供填写入口。</p></div>
+              <span class="locked-value">不在页面显示</span><span class="tag tag--info">仅后端</span>
+            </li>
+          </ul>
+        </article>
+      </div>
 
-          <template v-if="active === 'general'">
-            <div class="settings-group"><h3>显示偏好</h3>
-              <div class="setting-row"><div><label for="setting-language">界面语言</label><p id="language-hint">当前界面使用简体中文</p></div><select id="setting-language" disabled aria-describedby="language-hint"><option>简体中文</option></select></div>
-              <div class="setting-row"><div><label for="setting-timezone">时间显示</label><p>比赛时间和记录时间使用的时区</p></div><select id="setting-timezone" v-model="draft.timezone"><option value="Asia/Shanghai">北京时间 · UTC+8</option><option value="UTC">协调世界时 · UTC</option><option value="America/New_York">美国东部时间</option></select></div>
-              <div class="setting-row"><div><label for="setting-odds">赔率格式</label><p>同一份报价，用你熟悉的方式阅读</p></div><select id="setting-odds" v-model="draft.oddsFormat"><option value="decimal">十进制 · 1.91</option><option value="american">美式 · -110</option><option value="hongkong">香港盘 · 0.91</option></select></div>
-            </div>
-            <div class="settings-group"><h3>阅读体验</h3><div class="setting-row density-row"><div><span class="setting-label" id="density-label">内容密度</span><p>调整卡片与列表之间的留白</p></div><div class="density-options" role="group" aria-labelledby="density-label"><button v-for="item in [{ value: 'comfortable', label: '舒适', lines: '☰' }, { value: 'compact', label: '紧凑', lines: '≡' }]" :key="item.value" :class="{ selected: draft.density === item.value }" :aria-pressed="draft.density === item.value" @click="draft.density = item.value"><span class="density-symbol" aria-hidden="true">{{ item.lines }}</span>{{ item.label }}<span class="selection-dot" aria-hidden="true"></span></button></div></div></div>
-            <div class="panel-footnote"><span aria-hidden="true">◷</span> 当前网站仍使用北京时间与十进制赔率，预览选择尚未应用。</div>
-          </template>
+      <div class="column">
+        <article class="panel panel-pad reveal" style="--i: 2" aria-labelledby="prefs-heading">
+          <header class="panel-head">
+            <h2 id="prefs-heading" class="section-title">显示偏好<small>只保存在这台设备的浏览器里</small></h2>
+            <button type="button" class="btn btn--sm btn--quiet" @click="resetPreferences">恢复默认</button>
+          </header>
+          <ul class="prefs">
+            <li>
+              <div><h3>赔率格式</h3><p>内部一律按十进制保存和计算，这里只改显示。同一个报价现在显示为 <strong class="num">{{ price(EXAMPLE_PRICE) }}</strong>（十进制 {{ EXAMPLE_PRICE }}，香港盘是净赢部分）。</p></div>
+              <div class="seg" role="group" aria-label="赔率格式">
+                <button type="button" :aria-pressed="preferences.oddsFormat === 'decimal'" @click="preferences.oddsFormat = 'decimal'">十进制</button>
+                <button type="button" :aria-pressed="preferences.oddsFormat === 'hk'" @click="preferences.oddsFormat = 'hk'">香港盘</button>
+              </div>
+            </li>
+            <li>
+              <div><h3>默认报价平台</h3><p>比赛卡片默认显示哪家平台的报价；某场比赛没有这家时，用数据源返回的第一家。只是默认显示，不代表推荐。</p></div>
+              <select v-model="preferences.bookmaker" class="select" aria-label="默认报价平台" :disabled="!bookmakers.length && !missingBook">
+                <option value="">跟随数据源（第一家）</option>
+                <option v-for="book in bookmakers" :key="book.key" :value="book.key">{{ book.title }}</option>
+                <option v-if="missingBook" :value="missingBook">{{ missingBook }}（当前快照里没有）</option>
+              </select>
+              <p v-if="!bookmakers.length" class="pref-hint">读到真实的盘口快照后，这里会列出可选的平台。</p>
+            </li>
+            <li>
+              <div><h3>动态背景</h3><p>内页背后那片落雨的城市夜景。关闭后换成静态底图；系统开启“减少动态效果”时只画静止的一帧。</p></div>
+              <div class="seg" role="group" aria-label="动态背景">
+                <button type="button" :aria-pressed="preferences.backdrop === 'on'" @click="preferences.backdrop = 'on'">开</button>
+                <button type="button" :aria-pressed="preferences.backdrop === 'off'" @click="preferences.backdrop = 'off'">关</button>
+              </div>
+            </li>
+            <li>
+              <div><h3>演示数据</h3><p>预测记录、效果统计、长期记忆还没有后端接口；打开时用虚构的“沙盘联赛”预览这些页面，比赛页在没有真实比赛时也会用它顶上。真实数据存在时永远优先显示真实数据。</p></div>
+              <div class="seg" role="group" aria-label="演示数据">
+                <button type="button" :aria-pressed="demoEnabled" @click="setDemo(true)">没有真实数据时显示</button>
+                <button type="button" :aria-pressed="!demoEnabled" @click="setDemo(false)">关闭</button>
+              </div>
+            </li>
+            <li>
+              <div><h3>时区</h3><p>所有时间按北京时间显示；内部统一用国际标准时间保存。</p></div>
+              <span class="locked-value">北京时间 UTC+8</span><span class="tag">固定</span>
+            </li>
+          </ul>
+        </article>
 
-          <template v-else-if="active === 'data'">
-            <div class="settings-group"><h3>报价来源</h3>
-              <div class="setting-row"><div><span class="setting-label">盘口数据源</span><p>已接入的数据供应商</p></div><span class="provider-label">The Odds API <small>现有来源</small></span></div>
-              <div class="setting-row"><div><label for="setting-platform">参考报价平台</label><p>预留默认平台选择，示例平台不代表推荐</p></div><select id="setting-platform" v-model="draft.platform"><option value="selected">跟随比赛页选择</option><option value="draftkings">DraftKings（示例）</option><option value="fanduel">FanDuel（示例）</option></select></div>
-            </div>
-            <div class="settings-group"><h3>更新规则</h3>
-              <div class="setting-row"><div><label for="setting-update">盘口更新方式</label><p>当前仍需在比赛页手动更新</p></div><select id="setting-update" v-model="draft.updateMode"><option value="manual">手动更新</option><option value="scheduled" disabled>定时更新 · 后续接入</option></select></div>
-              <div class="setting-row"><div><label for="setting-stale">报价过期提醒</label><p>预留超过指定时长后的提示规则</p></div><select id="setting-stale" v-model="draft.staleMinutes"><option value="5">超过 5 分钟</option><option value="15">超过 15 分钟</option><option value="30">超过 30 分钟</option></select></div>
-            </div>
-            <div class="inline-action"><div><strong>查看当前比赛与报价</strong><p>前往比赛页核对快照时间与平台</p></div><RouterLink to="/matches">前往比赛页 <span aria-hidden="true">↗</span></RouterLink></div>
-          </template>
-
-          <template v-else-if="active === 'model'">
-            <div class="settings-group"><h3>模型连接</h3>
-              <div class="setting-row"><div><label for="setting-model">分析模型</label><p>模型名称和连接状态可在 NBA 助手查看</p></div><select id="setting-model" v-model="draft.model"><option value="current">沿用后台配置</option><option disabled>更多模型 · 后续接入</option></select></div>
-              <div class="setting-row"><div><span class="setting-label">API 密钥</span><p>密钥相当于访问密码，仅在网站后台配置</p></div><button class="secondary-button" disabled>管理连接 · 待接入</button></div>
-            </div>
-            <div class="settings-group"><h3>调用边界</h3>
-              <div class="setting-row"><div><label for="setting-timeout">单次等待上限</label><p>预留 AI 回答的最长等待时间</p></div><select id="setting-timeout" v-model="draft.timeout"><option value="60">60 秒（预览）</option><option value="120">120 秒（预览）</option><option value="180">180 秒（预览）</option></select></div>
-              <div class="setting-row"><div><label for="setting-retry">失败后自动重试</label><p>当前网站不会自动重复提交模型请求</p></div><select id="setting-retry" v-model="draft.retry"><option value="0">不自动重试</option><option value="1" disabled>重试 1 次 · 待讨论</option></select></div>
-              <div class="setting-row"><div><label for="setting-budget">额度与费用提醒</label><p>未来接入使用量后，接近预算时提醒</p></div><div class="switch-control"><span>{{ draft.budgetNotice ? '开启预览' : '关闭预览' }}</span><input id="setting-budget" v-model="draft.budgetNotice" class="switch" type="checkbox" role="switch" /></div></div>
-            </div>
-            <div class="panel-footnote">本页不检测模型连接，也不消耗模型调用额度；等待上限为示例值。</div>
-          </template>
-
-          <template v-else-if="active === 'analysis'">
-            <div class="settings-group"><h3>分析偏好</h3>
-              <div class="setting-row"><div><label for="setting-market">关注玩法</label><p>预留个人常看的分析范围</p></div><select id="setting-market" v-model="draft.market"><option value="both">让分 + 大小分</option><option value="spreads">让分</option><option value="totals">大小分</option></select></div>
-              <div class="setting-row"><div><label for="setting-record">正式记录方式</label><p>保存逻辑尚未接入，先预留确认入口</p></div><select id="setting-record" v-model="draft.recordMode"><option value="confirm">由我确认后记录</option><option value="automatic" disabled>自动记录 · 待讨论</option></select></div>
-            </div>
-            <div class="settings-group"><h3>复盘习惯</h3>
-              <div class="setting-row"><div><label for="setting-snapshot">保留当时盘口</label><p>未来保存记录时，一起留下报价与采集时间</p></div><div class="switch-control"><span>{{ draft.includeSnapshot ? '开启预览' : '关闭预览' }}</span><input id="setting-snapshot" v-model="draft.includeSnapshot" class="switch" type="checkbox" role="switch" /></div></div>
-              <div class="setting-row"><div><label for="setting-review">赛后复盘提醒</label><p>预留站内提醒，不会发送系统通知</p></div><div class="switch-control"><span>{{ draft.reviewReminder ? '开启预览' : '关闭预览' }}</span><input id="setting-review" v-model="draft.reviewReminder" class="switch" type="checkbox" role="switch" /></div></div>
-            </div>
-            <div class="inline-action"><div><strong>每次判断，都有迹可循</strong><p>查看个人选场复盘的界面框架</p></div><RouterLink to="/records">查看预测记录 <span aria-hidden="true">↗</span></RouterLink></div>
-          </template>
-
-          <template v-else>
-            <div class="settings-group"><h3>你的研究资料</h3>
-              <div class="setting-row"><div><span class="setting-label">预测与复盘记录</span><p>查看选场依据与赛后笔记的预览</p></div><RouterLink class="secondary-button" to="/records">查看记录 <span aria-hidden="true">↗</span></RouterLink></div>
-              <div class="setting-row"><div><span class="setting-label">长期记忆</span><p>管理分析偏好与长期经验的预留入口</p></div><RouterLink class="secondary-button" to="/memory">前往记忆 <span aria-hidden="true">↗</span></RouterLink></div>
-            </div>
-            <div class="settings-group"><h3>备份与迁移 <span class="group-badge">待接入</span></h3>
-              <div class="setting-row"><div><span class="setting-label">导出研究资料</span><p>正式记录与存储接入后，再提供导出</p></div><button class="secondary-button" disabled>导出数据</button></div>
-              <div class="setting-row"><div><span class="setting-label">从备份恢复</span><p>未来从备份文件恢复资料</p></div><button class="secondary-button" disabled>导入备份</button></div>
-            </div>
-            <div class="panel-footnote">正式存储尚未接入；当前不会读取、导出或清空任何资料。</div>
-          </template>
-        </section>
-        <footer class="settings-footer"><span class="draft-status"><i :class="{ changed: dirty }"></i>{{ dirty ? '预览有修改，可暂存后继续查看' : '仅在当前设置页预览' }}</span><span>真实保存功能后续接入</span></footer>
-        <p class="save-notice" role="status" aria-live="polite">{{ notice }}</p>
+        <article class="panel panel-pad reveal about" style="--i: 4" aria-labelledby="about-heading">
+          <header class="panel-head"><h2 id="about-heading" class="section-title">关于</h2></header>
+          <p class="about-name"><span>OPERATION</span>DOGHUNT</p>
+          <p class="about-text">以聊天为入口的 NBA 分析项目，个人使用的分析与模拟验证工具，不涉及真实投注。</p>
+          <div class="about-actions">
+            <RouterLink to="/welcome" class="btn">返回 3D 指挥室</RouterLink>
+            <span class="about-keys"><kbd class="kbd">Ctrl</kbd><kbd class="kbd">K</kbd> 快速前往任意工位</span>
+          </div>
+        </article>
       </div>
     </div>
   </section>
 </template>
 
 <style scoped>
-.settings-page { max-width: 1340px; margin: auto; padding: 38px 48px 30px; color: #203a36; }
-.settings-heading { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.settings-eyebrow { display: flex; align-items: center; gap: 7px; color: #7c8d77; font-size: 9px; letter-spacing: 2px; }
-.settings-eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: #ab9056; }
-.settings-title { display: flex; align-items: center; gap: 13px; margin-top: 9px; }
-.settings-title h1 { font-size: 29px; margin: 0; letter-spacing: -.7px; }
-.preview-badge { font-size: 10px; padding: 3px 7px; border: 1px solid #d5c798; border-radius: 4px; color: #8c7743; background: #f4f0e5; }
-.settings-heading p { margin: 9px 0 0; font-size: 12px; color: #7b897c; }
-.heading-actions { display: flex; gap: 9px; flex-shrink: 0; }
-.primary-button, .secondary-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 6px; padding: 9px 14px; border: 1px solid #d5dfd0; font: inherit; font-size: 12px; line-height: 1.5; white-space: nowrap; background: #fcfdfb; color: #526d4e; }
-.primary-button { background: #2d5541; border-color: #2d5541; color: white; }
-.primary-button:enabled:hover { background: #214432; }.secondary-button:enabled:hover, a.secondary-button:hover { background: #edf2e9; border-color: #9ab18d; }
-.preview-note { display: flex; align-items: center; gap: 9px; margin: 24px 0; padding: 12px 15px; border: 1px solid #e3e5d6; border-radius: 7px; background: #f1f3e9; font-size: 11px; color: #788168; }
-.preview-note > span:first-child { width: 15px; height: 15px; border: 1px solid #a6ad91; border-radius: 50%; display: grid; place-items: center; font: 10px Georgia, serif; flex-shrink: 0; }
-.preview-note p { margin: 0; }.note-tag { margin-left: auto; white-space: nowrap; font-size: 10px; color: #92997f; }
-.settings-layout { display: grid; grid-template-columns: 218px minmax(0, 1fr); gap: 27px; align-items: start; }
-.settings-sidebar nav { display: flex; flex-direction: column; gap: 7px; }
-.settings-sidebar nav button { width: 100%; display: flex; align-items: center; gap: 13px; text-align: left; background: transparent; border: 1px solid transparent; padding: 15px 14px; border-radius: 8px; color: #7c8c74; }
-.settings-sidebar nav button:hover { background: #edf2e8; }.settings-sidebar nav button.active { background: #e8efe2; color: #355e3f; border-color: #d9e3d0; }
-svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
-.settings-sidebar strong { display: block; font-size: 12px; font-weight: 550; }.settings-sidebar small { display: block; font-size: 10px; margin-top: 3px; color: #8b9880; }
-.nav-arrow { font-size: 18px; margin-left: auto; opacity: .6; }.settings-sidebar nav button:not(.active) .nav-arrow { visibility: hidden; }
-.sidebar-tip { margin: 31px 12px 0; border-top: 1px solid #e0e6d9; padding-top: 21px; }.tip-mark { display: block; font-size: 21px; color: #a3966d; margin-bottom: 7px; }
-.sidebar-tip strong { font-size: 11px; color: #6e8265; font-weight: 500; }.sidebar-tip p { font-size: 10px; line-height: 1.9; color: #8b9781; margin: 7px 0 0; }
-.settings-main { min-width: 0; }.settings-panel { background: #fcfdfb; border: 1px solid #dde5d6; border-radius: 10px; overflow: hidden; }
-.panel-heading { padding: 25px 28px 23px; display: flex; justify-content: space-between; align-items: center; gap: 18px; border-bottom: 1px solid #e6ebdf; }
-.panel-eyebrow { color: #a0936e; font-size: 8px; letter-spacing: 1.8px; }.panel-heading h2 { font-size: 19px; font-weight: 550; margin: 7px 0 6px; }.panel-heading p { font-size: 11px; color: #89937e; margin: 0; }
-.panel-heading > svg { width: 39px; height: 39px; background: #edf2e6; border-radius: 11px; padding: 10px; color: #7b936e; }
-.settings-group { margin: 0 28px; padding: 23px 0 6px; border-bottom: 1px solid #e7ecdf; }.settings-group h3 { margin: 0 0 7px; font-weight: 550; font-size: 11px; color: #809173; letter-spacing: .5px; display: flex; gap: 9px; align-items: center; }
-.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 17px 0; }.setting-row > div:first-child { min-width: 0; }.setting-row label, .setting-label { font-size: 12px; font-weight: 500; }.setting-row p { font-size: 10px; color: #8a957f; margin: 5px 0 0; line-height: 1.7; }
-.setting-row select { width: 194px; max-width: 100%; flex-shrink: 0; padding: 9px 11px; border-radius: 6px; border: 1px solid #dce4d4; color: #4c6547; background: #f9fbf6; font: inherit; font-size: 11px; min-height: 36px; cursor: pointer; }
-.setting-row select:disabled { cursor: default; color: #8f9b87; background: #f3f6ee; }.setting-row select:enabled:hover { border-color: #a0b592; }
-.density-row { align-items: flex-start; padding-top: 18px; padding-bottom: 22px; }.density-options { display: flex; gap: 10px; }.density-options button { width: 92px; text-align: left; position: relative; border: 1px solid #dce4d4; border-radius: 6px; padding: 10px 12px; background: #fcfdfb; color: #8b997e; font-size: 10px; }.density-options button.selected { border-color: #78966b; background: #f0f5e9; color: #4a6d3c; }
-.density-symbol { display: block; font-size: 26px; line-height: 1; margin-bottom: 12px; color: #a1b493; }.selection-dot { position: absolute; bottom: 11px; right: 10px; width: 8px; height: 8px; border: 1px solid #c3cfb7; border-radius: 50%; }.selected .selection-dot { background: #799769; border-color: #799769; box-shadow: inset 0 0 0 2px #f0f5e9; }
-.panel-footnote { margin: 19px 28px 22px; font-size: 10px; color: #8d987e; line-height: 1.8; display: flex; align-items: center; gap: 7px; }
-.settings-footer { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 10px; color: #8b977f; margin: 15px 2px 0; }.draft-status { display: flex; align-items: center; gap: 6px; }.draft-status i { width: 5px; height: 5px; border-radius: 50%; background: #9aad8b; }.draft-status i.changed { background: #b79d60; }
-.save-notice { margin: 10px 2px 0; color: #56764a; font-size: 11px; min-height: 20px; }.provider-label { font-size: 12px; color: #5a744e; text-align: right; }.provider-label small { margin-left: 6px; font-size: 9px; color: #8e9a82; }
-.switch-control { display: flex; gap: 9px; align-items: center; flex-shrink: 0; }.switch-control > span { color: #88967b; font-size: 10px; }.switch { appearance: none; margin: 0; width: 34px; height: 20px; border-radius: 12px; background: #dce3d4; cursor: pointer; border: 1px solid #cdd9c3; position: relative; }.switch::after { content: ''; position: absolute; width: 14px; height: 14px; top: 2px; left: 2px; border-radius: 50%; background: white; box-shadow: 0 1px 2px #203a3620; }.switch:checked { background: #6b895b; border-color: #6b895b; }.switch:checked::after { transform: translateX(14px); }
-.inline-action { display: flex; align-items: center; justify-content: space-between; gap: 18px; background: #f4f7ee; margin: 21px 28px 24px; padding: 15px; border-radius: 7px; }.inline-action strong { font-size: 11px; color: #687f59; font-weight: 500; }.inline-action p { font-size: 10px; color: #8d987e; margin: 4px 0 0; }.inline-action a { font-size: 11px; color: #5a784b; white-space: nowrap; }.group-badge { font-size: 9px; color: #9b987a; background: #f1f0e4; padding: 2px 6px; border-radius: 4px; font-weight: 400; }
-@media (max-width: 1150px) { .settings-page { padding: 30px 28px; }.settings-layout { grid-template-columns: 185px minmax(0, 1fr); gap: 20px; }.settings-sidebar nav button { padding: 14px 10px; gap: 10px; }.panel-heading { padding: 22px; }.settings-group { margin: 0 22px; }.panel-footnote { margin-left: 22px; margin-right: 22px; }.setting-row { gap: 14px; }.setting-row select { width: 175px; }.inline-action { margin-left: 22px; margin-right: 22px; } }
-@media (max-width: 950px) { .settings-layout { grid-template-columns: 1fr; gap: 18px; }.settings-sidebar nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }.settings-sidebar nav button { flex-direction: column; text-align: center; gap: 7px; padding: 12px 3px; }.settings-sidebar nav strong { font-size: 11px; }.settings-sidebar nav small, .nav-arrow, .sidebar-tip { display: none; } }
-@media (max-width: 700px) { .settings-page { padding: 28px 20px 20px; }.settings-title h1 { font-size: 25px; }.settings-heading { flex-direction: column; align-items: flex-start; gap: 17px; }.heading-actions { align-self: stretch; justify-content: flex-end; }.preview-note { margin: 18px 0; align-items: flex-start; font-size: 10px; padding: 11px 12px; }.preview-note > span:first-child { margin-top: 2px; }.note-tag { display: none; }.settings-sidebar nav button { padding: 11px 1px; }.settings-sidebar nav svg { width: 17px; height: 17px; }.settings-sidebar nav strong { font-size: 10px; }.panel-heading { padding: 21px 18px; }.panel-heading h2 { font-size: 18px; }.panel-heading p { font-size: 10px; }.settings-group { margin: 0 18px; padding-top: 20px; }.setting-row { flex-wrap: wrap; gap: 12px; padding: 15px 0; }.setting-row > div:first-child { flex: 1 1 155px; }.setting-row select { width: 100%; }.density-options { width: 100%; }.density-options button { width: 100%; }.panel-footnote { margin: 16px 18px 20px; align-items: flex-start; }.inline-action { margin: 18px; flex-wrap: wrap; gap: 12px; }.settings-footer { font-size: 9px; }.setting-row .secondary-button { font-size: 10px; }.provider-label { font-size: 11px; } }
+.columns { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.column { display: grid; gap: 16px; min-width: 0; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+
+.checks, .locked, .prefs { margin: 0; padding: 0; list-style: none; }
+.checks li { display: flex; align-items: flex-start; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.checks li:last-child { border-bottom: 0; padding-bottom: 2px; }
+.checks .dot { margin-top: 8px; }
+.check-main { flex: 1; min-width: 0; }
+.check-name { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .08em; }
+.check-name strong { font-size: 13px; font-weight: 500; letter-spacing: .06em; }
+.check-name time { font-size: 12px; font-weight: 400; letter-spacing: 0; color: var(--text-3); }
+.check-detail { margin: 4px 0 0; font-size: 13px; line-height: 1.7; color: var(--text-2); overflow-wrap: anywhere; }
+.check-note { margin: 3px 0 0; font-size: 12px; line-height: 1.7; color: var(--text-3); }
+.tone-ok { color: var(--green); }
+.tone-warn { color: var(--amber); }
+.tone-bad { color: var(--red); }
+.tone-off { color: var(--text-3); }
+.tone-wait { color: var(--amber); }
+
+.locked li, .prefs li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 14px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line); }
+.locked li:last-child, .prefs li:last-child { border-bottom: 0; padding-bottom: 2px; }
+.locked h3, .prefs h3 { margin: 0; font-size: 14px; font-weight: 600; letter-spacing: .08em; }
+.locked p, .prefs li > div > p { margin: 4px 0 0; font-size: 12px; line-height: 1.75; color: var(--text-3); }
+.prefs li > div > p strong { font-size: 14px; font-style: italic; font-weight: 800; color: var(--cyan); }
+.locked-value { font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.prefs li > .seg, .prefs li > .select { grid-column: 2 / -1; justify-self: end; }
+.prefs .select { width: 220px; }
+.pref-hint { grid-column: 1 / -1; margin: 0; font-size: 12px; color: var(--amber); }
+
+.about-name { margin: 10px 0 0; font-size: 34px; font-style: italic; font-weight: 800; letter-spacing: -.01em; line-height: 1; color: transparent; background: linear-gradient(180deg, #fff 10%, #b9c8f6 100%); -webkit-background-clip: text; background-clip: text; }
+.about-name span { display: block; margin-bottom: 4px; font-size: 13px; font-weight: 300; letter-spacing: .14em; color: var(--text-2); -webkit-text-fill-color: var(--text-2); }
+.about-text { margin: 12px 0 0; font-size: 13px; line-height: 1.8; color: var(--text-2); }
+.about-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+.about-keys { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); }
+.about-keys .kbd:last-of-type { margin-right: 6px; }
+
+@media (max-width: 1100px) {
+  .columns { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) {
+  .locked li, .prefs li { grid-template-columns: minmax(0, 1fr) auto; }
+  .locked li > div, .prefs li > div { grid-column: 1 / -1; }
+  .prefs li > .seg, .prefs li > .select { grid-column: 1 / -1; justify-self: start; }
+  .prefs .select { width: 100%; }
+  .checks li { flex-wrap: wrap; }
+  .checks li > .btn { margin-left: 21px; }
+}
 </style>
