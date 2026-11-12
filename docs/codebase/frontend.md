@@ -5,21 +5,21 @@
 | 项目 | 当前记录 |
 | --- | --- |
 | 模块标识 | frontend |
-| 核对日期 | 2026-11-11（Asia/Shanghai） |
-| 核对范围 | 当日增量：独立比赛页、导航、跨页聊天保留、选场与聊天快照接入；另有本地未提交的 3D 启动页增量（见文末） |
-| 实现状态 | 部分实现：独立比赛盘口页面与真实模型聊天联动，3D 启动页首轮可用，其中的沙盘篮球比赛做过两轮；正式预测记录与记忆未接入 |
-| 验证程度 | 本次构建、19 项后端离线测试与浏览器两次真实问答通过；启动页另有构建与无头浏览器检查；宽窄布局沿用历史证据，未验证手机实机 |
+| 核对日期 | 2026-11-12（Asia/Shanghai） |
+| 核对范围 | 2026-11-12 增量：内页整体重做（外壳、聊天、比赛与盘口、预测记录、效果统计、长期记忆、设置、404）；此前的 3D 启动页与沙盘比赛已在 `dev` 分支的 `b58db4a` 提交，本次只改了其中两处文案 |
+| 实现状态 | 部分实现：聊天、比赛与盘口用后端真实数据；预测记录、效果统计、长期记忆的界面已做完，但后端没有对应接口，只能用虚构的演示数据展示；设置页的运行状态和本机显示偏好可用 |
+| 验证程度 | 2026-11-12 构建通过；内页在无头浏览器里用模拟的接口返回逐页核对。本机后端没有运行，这一轮没有连过真实后端和真实模型；未验证手机实机 |
 
 ## 负责什么
 
-Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Router 管页面地址之间的切换。前端承担页面布局、连接状态、真实模型聊天和本次打开网站时的对话上下文。比赛与盘口在独立 `/matches` 页面，聊天在 `/`；卡片选场后带比赛及平台标识进入聊天，由后端读取报价。
+Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Router 管页面地址之间的切换。前端承担页面布局、运行状态显示、真实模型聊天和本次打开网站时的对话上下文。比赛与盘口在独立 `/matches` 页面，聊天在 `/`；卡片选场后带比赛及平台标识进入聊天，由后端读取报价。预测记录、效果统计、长期记忆三页的界面和计算在前端，数据来源目前只有演示数据。
 
 ## 到哪里找实现
 
 | 源码或配置 | 入口或关键符号 | 用途 |
 | --- | --- | --- |
-| [main.ts](../../frontend/src/main.ts) / [App.vue](../../frontend/src/App.vue) | 应用启动 / `AppShell` / `KeepAlive` | 装入布局与当前页面，仅缓存 `ChatView`，切换页面保留对话与输入；标了 `meta.fullscreen` 的页面不套公共布局 |
-| [router/index.ts](../../frontend/src/router/index.ts) | `createRouter` / `beforeEach` | 注册聊天首页、启动页 `/welcome`、独立比赛页、记录、统计、记忆、设置和未知地址页面；每个标签页首次打开先转到启动页 |
+| [main.ts](../../frontend/src/main.ts) / [App.vue](../../frontend/src/App.vue) | 应用启动 / `AppShell` / `Transition` / `KeepAlive` | 装入布局与当前页面，页面之间做短淡入；仅缓存 `ChatView`，切换页面保留对话与输入；标了 `meta.fullscreen` 的页面不套公共布局 |
+| [router/index.ts](../../frontend/src/router/index.ts) | `createRouter` / `beforeEach` / `afterEach` | 注册聊天首页、启动页 `/welcome`、独立比赛页、记录、统计、记忆、设置和未知地址页面；每个标签页首次打开先转到启动页；按 `meta.title` 设置浏览器标签页标题 |
 | [startupGate.ts](../../frontend/src/stores/startupGate.ts) | `hasEntered` / `rememberTarget` | 用 `sessionStorage` 记录本标签页是否已进入系统，并记住原本要去的地址 |
 | [StartupView.vue](../../frontend/src/views/StartupView.vue) | `openScene` / `enter` / `dock` / `preview` | 启动页固定的标题、进入按钮、模块菜单、站点卡片、悬浮标签和声音开关，以及场景加载、失败、进入三种状态 |
 | [StartupMenu.vue](../../frontend/src/components/startup/StartupMenu.vue) / [StationCard.vue](../../frontend/src/components/startup/StationCard.vue) | `preview` / `enter` 事件 | 模块菜单（悬停预览、点击直达）与镜头停靠后的站点说明卡片 |
@@ -36,12 +36,23 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | [game/view/arena/](../../frontend/src/game/view/arena/index.ts) | `createArena` | 球馆：看台布局、阶梯结构、观众、场边围挡、技术台与替补席、中央记分屏与照明灯、场地灯光 |
 | [game/index.ts](../../frontend/src/game/index.ts) / [input.ts](../../frontend/src/game/input.ts) / [sound.ts](../../frontend/src/game/sound.ts) | `Game.create` / `begin` / `end` / `GameInput` / `createGameSound` | 比赛控制器（固定 120 次/秒步进；画面可提前在后台搭好，开打时才接管键盘和声音，退出后保留画面）、键盘与手柄输入、Web Audio 合成的比赛音效 |
 | [GameHud.vue](../../frontend/src/components/game/GameHud.vue) / [game/hud.ts](../../frontend/src/game/hud.ts) | `setMeter` / `HudState` | 记分牌、进攻计时、提示、出手条、操作说明、暂停与终场菜单；`hud.ts` 不引用渲染库，供界面组件使用 |
-| [MatchesView.vue](../../frontend/src/views/MatchesView.vue) | `MatchBoard` | 独立比赛页 `/matches`，不嵌在聊天内 |
-| [oddsSelection.ts](../../frontend/src/stores/oddsSelection.ts) | `oddsSelection` | 内存共享比赛与平台选择；不保存报价、不持久化 |
-| [AppShell.vue](../../frontend/src/components/layout/AppShell.vue) | `BackendStatus` | 公共侧栏与顶部连接状态 |
-| [ChatView.vue](../../frontend/src/views/ChatView.vue) | `chat-input` | 模型状态、发送、等待、错误、当前页历史与新对话；未配置或等待时禁用发送 |
-| [FeaturePlaceholder.vue](../../frontend/src/components/common/FeaturePlaceholder.vue) | 预留页组件 | 说明后续功能，当前不接业务数据 |
-| [useBackendHealth.ts](../../frontend/src/composables/useBackendHealth.ts) | `useBackendHealth` / `check` | 页面打开时检查连接，并阻止检查重复进行 |
+| [styles/](../../frontend/src/styles/tokens.css) | `tokens.css` / `ui.css` | 全站的颜色、字体等设计变量，以及内页共用的面板、按钮、标签、分段选择、表格、提示条和入场动效；各页面自己的样式写在组件里 |
+| [AppShell.vue](../../frontend/src/components/layout/AppShell.vue) | `checkHealth` / `checkModel` / `loadBoard` | 内页外壳：进入时做一轮只读的状态检查，装入背景、导航、状态条和命令面板，监听 Ctrl/⌘+K |
+| [layout/](../../frontend/src/components/layout/StationRail.vue) | `StationRail` / `StatusStrip` / `CommandPalette` / `ShellBackdrop` | 侧边导航（窄屏变成底部标签栏）、顶部状态条（快照、模型、后端、北京时间）、快速前往面板、背景 |
+| [shell/backdrop.ts](../../frontend/src/shell/backdrop.ts) / [countUp.ts](../../frontend/src/shell/countUp.ts) | `createBackdrop` / `useCountUp` | 用浏览器自带的 WebGL 画的落雨城市夜景（不引入 three.js）；统计页的数字滚动 |
+| [stores/system.ts](../../frontend/src/stores/system.ts) | `health` / `model` / `board` / `now` | 各页面共用的运行状态：后端连接、模型是否已配置、最新盘口快照、每秒走一次的时钟；只有 `refreshBoard` 会消耗盘口接口额度 |
+| [stores/preferences.ts](../../frontend/src/stores/preferences.ts) | `preferences` | 保存在浏览器本地的显示偏好：赔率格式、默认报价平台、动态背景、演示数据 |
+| [stores/demo.ts](../../frontend/src/stores/demo.ts) / [records.ts](../../frontend/src/stores/records.ts) | `demoEnabled` / `boardIsDemo` / `shownBoard` / `predictionRecords` | 哪些页面此刻在用演示数据；预测记录的来源（后端没有接口，演示打开时返回演示记录，否则为空） |
+| [stores/oddsSelection.ts](../../frontend/src/stores/oddsSelection.ts) | `oddsSelection` / `sampleChatRequested` | 内存共享比赛与平台选择，不保存报价、不持久化；从演示比赛点“交给 AI 分析”时改为请求示例对话 |
+| [demo/](../../frontend/src/demo/league.ts) | `demoBoard` / `demoRecords` / `demoMemory` / `demoTranscript` | 虚构的“沙盘联赛”：十支球队、六家“演示平台”、盘口快照、约四个月的预测记录、记忆块和一段示例对话，由固定种子生成 |
+| [domain/](../../frontend/src/domain/settlement.ts) | `settle` / `summarize` / `equityCurve` | 按需求文档第 13、14 节计算赢输走盘、固定 1 单位的模拟盈亏、命中率、ROI、覆盖率、盈亏平衡命中率和命中率的 95% 区间；不依赖界面 |
+| [ChatView.vue](../../frontend/src/views/ChatView.vue) / [components/chat/](../../frontend/src/components/chat/markdown.ts) | `send` / `newChat` / `blocks` | 聊天页的状态与发送逻辑；起始画面、发言、等待卡片、输入区、右侧资料栏，以及把回答里的 Markdown 排成页面元素的 `markdown.ts` |
+| [MatchesView.vue](../../frontend/src/views/MatchesView.vue) / [components/odds/](../../frontend/src/components/odds/MatchBoard.vue) | `MatchBoard` / `NextTip` / `MatchCard` / `MatchDrawer` / `lineSpread` | 独立比赛页：筛选与分组、“下一场开赛”、比赛卡片、全部报价抽屉、各平台盘口分布 |
+| [RecordsView.vue](../../frontend/src/views/RecordsView.vue) / [components/records/](../../frontend/src/components/records/RecordDrawer.vue) | `RecordDrawer` / `recordsToCsv` | 预测记录的筛选、汇总、表格、详情抽屉和 CSV 导出 |
+| [StatisticsView.vue](../../frontend/src/views/StatisticsView.vue) / [components/stats/](../../frontend/src/components/stats/EquityChart.vue) | `EquityChart` / `HitRing` / `OutcomeBars` / `WeeklyBars` | 效果统计的指标卡、累计盈亏曲线、结算分布、按周表现和按策略版本对比 |
+| [MemoryView.vue](../../frontend/src/views/MemoryView.vue) / [components/memory/](../../frontend/src/components/memory/MemoryRack.vue) | `MemoryRack` / `MemoryInspector` | 长期记忆的父块机柜、子块详情与操作、维护记录 |
+| [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `checks` | 运行状态读数、本机显示偏好、由后端决定的规则（只读） |
+| [components/common/](../../frontend/src/components/common/SideDrawer.vue) | `SideDrawer` / `DemoRibbon` / `EmptyState` / `TeamMark` / `StationIcon` | 侧边抽屉（焦点不外漏）、演示数据提示带、空状态、球队标记、模块图标 |
 | [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `getHealth` | GET 为 5 秒超时，POST 聊天按后端超时加 10 秒；脱敏错误提示及格式核对 |
 | [vite.config.ts](../../frontend/vite.config.ts) | `proxy` | 本机开发与预览时将 `/api` 转给后端 |
 | [package.json](../../frontend/package.json) | `scripts` / `engines` | 开发、类型检查、构建命令及 Node.js 要求 |
@@ -49,7 +60,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 ## 输入、输出和依赖
 
 - 输入：页面地址、连接与配置检查、聊天输入、发送与新对话按钮。
-- 输出：连接状态、模型配置状态、等待提示、纯文本回答与错误；不执行模型返回的 HTML。
+- 输出：连接状态、模型配置状态、等待提示、回答与错误。回答里的 Markdown（标题、加粗、列表、表格、引用、代码）会排版显示，但只生成文字和固定的几种标签，不解析也不执行回答里的 HTML；链接只接受 http/https。
 - 依赖：[后端](backend.md) `/api/v1/health`、`GET /api/v1/model` 与 `POST /api/v1/chat`；Vite 转发到默认 `http://127.0.0.1:8000`。[chat.ts](../../frontend/src/api/chat.ts) 核对聊天结果与模型状态。
 - 配置：见 [前端配置示例](../../frontend/.env.example)。真实 Key 不放进前端，也不放进会向浏览器公开的 `VITE_` 变量。
 
@@ -58,11 +69,12 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | 能力 | 当前情况 | 依据 |
 | --- | --- | --- |
 | 页面切换 | 已注册首页和各业务入口 | `router/index.ts` 中的路由表 |
-| 后端连接检查 | 有真实请求、响应核对、超时与手动重查逻辑 | `getHealth`、`getJson`、`useBackendHealth` |
+| 后端连接检查 | 有真实请求、响应核对、超时与手动重查逻辑；回到标签页且距上次检查超过 60 秒时自动再查一次 | `getHealth`、`getJson`、`stores/system.ts` 的 `checkHealth` |
 | 比赛与盘口 | 独立页面按北京时间筛选今天、明天、近 7 天、全部已开盘，按平台展示报价；选好平台后交给 AI | [MatchBoard.vue](../../frontend/src/components/odds/MatchBoard.vue)、[MatchCard.vue](../../frontend/src/components/odds/MatchCard.vue)、[MarketQuote.vue](../../frontend/src/components/odds/MarketQuote.vue) |
 | AI 聊天 | 每次读取最新保存快照；选场时只使用该比赛该平台，问题历史保留选场标签；等待中阻止重复提交、失败保留输入、不自动重试 | `ChatView.vue`、[chat.ts](../../frontend/src/api/chat.ts)、[类型](../../frontend/src/types/api.ts) |
-| 记录、统计、记忆和设置 | 只有预留页，没有业务数据或保存行为 | [RecordsView](../../frontend/src/views/RecordsView.vue)、[StatisticsView](../../frontend/src/views/StatisticsView.vue)、[MemoryView](../../frontend/src/views/MemoryView.vue)、[SettingsView](../../frontend/src/views/SettingsView.vue) |
-| 跨页面业务状态 | Vue ref 共享选场，KeepAlive 保留聊天；没有新增状态库 | [stores 说明](../../frontend/src/stores/README.md) |
+| 预测记录、效果统计、长期记忆 | 仅界面：页面、筛选、图表、结算与统计计算都已实现，但后端没有保存预测、结算赛果和记忆的接口，没有任何真实数据；演示数据打开时显示虚构联赛的内容并明确标注，关闭时显示空状态 | [RecordsView](../../frontend/src/views/RecordsView.vue)、[StatisticsView](../../frontend/src/views/StatisticsView.vue)、[MemoryView](../../frontend/src/views/MemoryView.vue)、`stores/records.ts`，详见文末 |
+| 设置 | 部分实现：运行状态是真实读数，显示偏好保存在本机浏览器；数据源、模型、记录规则等只能查看，页面上不能修改 | [SettingsView](../../frontend/src/views/SettingsView.vue)、`stores/preferences.ts` |
+| 跨页面业务状态 | Vue 的 ref / reactive 共享选场、运行状态和显示偏好，KeepAlive 保留聊天；没有新增状态库 | [stores 说明](../../frontend/src/stores/README.md) |
 | 3D 启动页 | 部分实现：写实风格的实时 3D 指挥室、模块菜单、点选设备、开场运镜与进入流程可用；全部由代码生成，未经美术评审，未在手机实机验证 | `StartupView.vue`、`startup/`，详见文末 |
 | 沙盘篮球比赛 | 部分实现：从启动页点“开始比赛”进入的 3v3 街机篮球，键盘或手柄操作，可完整打完一场；当天按试玩意见做过第二轮（衔接、难度、球员模型与动作、球馆），第二轮的手感、难度与听感只经过自动化检查，还没有真人试玩；不支持触屏 | `game/`、`GameHud.vue`，详见文末 |
 
@@ -115,7 +127,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 画面：`three`（WebGL 渲染库）实时绘制。材质是按物理规律计算反光的 PBR 材质，表面细节贴图（拉丝金属、皮革、石材等）在显卡上现场生成；地面有随粗糙度变模糊的实时倒影，主光投射阴影；后期包含环境光遮蔽、泛光、胶片色调曲线、色差、暗角和颗粒。没有任何外部模型、图片或音频文件。
 - 场景：室内有战术桌、吊顶环形灯与投影机、左侧弧形工作台（九块动态屏幕）、右侧休息区、背后实墙上的项目标识、机柜、门和控制面板。室外是雨夜城市：按办公楼、住宅、玻璃塔三种风格生成窗灯的楼群、车流、球馆与探照灯、云层和闪电。玻璃上有下滑的雨珠和水汽，并映出室内。
 - 全息球场：十个棋子循环演示三套示意战术（挡拆、突破分球、弱侧反跑），球在队员间传递并出手。
-- 互动：场景里六个站点对应六个模块（战术桌=NBA 助手，三个工位=比赛与盘口、预测记录、效果统计，机柜=长期记忆，墙面面板=设置）。悬停出现标签和地面光环，点击后镜头停靠并显示说明卡片，可从卡片进入该模块；拖动、Esc 或“返回”回到自由环绕。菜单项悬停时镜头预览对应站点，点击直接进入。后四个模块只有预留页面，菜单和卡片上都标了“待开发”。
+- 互动：场景里六个站点对应六个模块（战术桌=NBA 助手，三个工位=比赛与盘口、预测记录、效果统计，机柜=长期记忆，墙面面板=设置）。悬停出现标签和地面光环，点击后镜头停靠并显示说明卡片，可从卡片进入该模块；拖动、Esc 或“返回”回到自由环绕。菜单项悬停时镜头预览对应站点，点击直接进入。记录、统计、记忆三个模块还没有后端数据，菜单和卡片上标“预览”（2026-11-12 内页重做时由“待开发”改来，设置不再标记）。
 - 镜头：自由环绕时水平可转一整圈，竖直 52°–88°，距离 5–8 米，不能平移；边界按房间尺寸推算，不会穿过墙、顶、桌子或家具。机位之间沿绕桌的弧线过渡。打开时有约 3.6 秒的开场运镜，期间进入按钮照常可用。
 - 状态：加载中显示静态底图且按钮立即可用；WebGL 不可用或显卡上下文丢失时显示“当前无法显示 3D 场景，仍可进入系统”并提供重试，菜单仍可直达各模块；跳转失败时恢复按钮并提示。
 - 声音：雨声、室内低鸣、雷声和界面提示音由 Web Audio 合成，默认关闭，点“声音”按钮后才创建音频环境，离开页面时释放。
@@ -168,3 +180,74 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 修过一个只在特定时序下出现的问题：预热时如果不连阴影一起画，之后球场上所有受光表面都是黑的（`GameView.warmUp` 里有说明）。
 
 边界：第二轮的改动还没有真人试玩过，难度是否合适、动作看起来是否自然只能由使用者自己判断；电脑的优势幅度是实现时定的，使用者没有给过具体数字。无头浏览器听不到声音，所有音效的听感未经确认；手柄输入的代码没有用真实手柄测过；未在手机、Safari、Firefox、核显或低性能设备上运行，观众和球员的面数在弱显卡上是否吃力未知；电脑 AI 只有一个难度；页面空闲时会自动预加载比赛场景，对只想进入系统的人是一笔额外的显存和后台计算开销。
+
+## 内页重新设计（2026-11-12，本地实现，未提交）
+
+使用者要求“里面的页面也可以开始设计了，你全权负责”。这对应需求文档第 17 节“页面原型”阶段；风格、演示数据的做法和下面列出的几项取舍都是本地决定，未经项目负责人确认。基准为 `dev` 分支的 `b58db4a`，改动只在本地工作区。
+
+**整体风格：** 内页从原来的浅绿色页面改为延续启动页的深色控制台：同一套深蓝底色、青色主色和琥珀色提醒色，标题沿用启动页的斜体粗字和斜切色块。每个页面对应启动页里的一个工位，顶部状态条显示“指挥室 / 工位 / 页面”。只有深色一套配色。
+
+**外壳：**
+
+- 背景是隔着落雨玻璃看到的城市夜景，用浏览器自带的 WebGL 画一张全屏图：横向最多 880 像素再放大，每秒约 30 帧，页面在后台时暂停，指针移动时灯光有轻微视差。WebGL 不可用或在设置里关闭时是静态渐变底图；系统开启“减少动态效果”时只画静止的一帧。
+- 侧边导航列出六个工位，窄于 1000 像素只留图标，窄于 700 像素变成固定在底部的一排标签。记录、统计、记忆三项带“预览”标记。底部有“快速前往”和“返回指挥室”。
+- 顶部状态条显示真实读数：盘口快照的采集时间、模型是否已配置、后端连接（点击重新检查）、北京时间。当前页面在用演示数据时多出一个琥珀色的“演示数据”标记。
+- Ctrl/⌘+K 打开命令面板：输入文字跳到某个工位，或切换赔率格式、演示数据、动态背景，重新检查后端连接。
+- 进入外壳时读一次后端连接、模型配置和最新盘口快照，都是只读本机后端，不调用模型、不向盘口供应商取数。
+
+**聊天（`/`）：** 发送逻辑、20 次提问上限、选场、不自动重试等规则没有变。变化的是：
+
+- 页面占满状态条以下的高度，记录在中间滚动，输入区固定在底部；宽屏右侧有资料栏，窄于 1180 像素时收进“本次资料”抽屉。
+- 起始画面有三步流程、三个点一下就填进输入框的问题（不会自动发送），以及从真实快照里最近的四场比赛直接选场。右上角的全息球场是装饰。
+- 回答按 Markdown 排版；每条回答显示模型名、等待秒数和 token 用量（后端返回时）。等待时显示已等时间和最长等待时间，小球场上的传球动画只是装饰，不表示处理阶段。
+- 发送方式从“只能点按钮”改为按钮或 Ctrl/⌘+Enter；单按 Enter 是换行，避免误发产生费用。
+- 资料栏显示后端会读到的快照状态、当前选场在快照里的报价（只是显示，发送时仍由后端重新读取）、本轮提问次数和累计 token。
+- 示例对话：演示数据打开且没有真实比赛可选时，可以看一段用演示盘口拼出来的两轮问答，顶部标注“没有调用模型”，此时不能继续提问，点“新对话”清除。
+
+**比赛与盘口（`/matches`）：** 读取、手动更新、60 秒间隔、日期筛选、平台切换和“交给 AI 分析”的行为没有变。新增：
+
+- “下一场开赛”：最近一场未到开赛时间的比赛放大显示，带实时倒计时。
+- 盘口分布条：同一玩法各家平台分别开在哪个数值上，一个方块一家平台，当前选中的平台高亮。只归类和计数，不求平均，不拼接任何一家都没开过的报价。
+- “全部报价”抽屉：各家平台的让分、大小分并排列出，点一行把卡片切到那家平台。
+- 卡片默认平台：先看设置里的“默认报价平台”，这场比赛没有那家时用数据源返回的第一家（原来固定用第一家）。
+- 赔率按设置里的格式显示（十进制或香港盘），内部仍是十进制。
+- 后端读不到任何比赛、且演示数据打开时，用演示盘口顶上，提示带里同时写明真实状态（例如“无法连接盘口服务”）。演示比赛的“交给 AI 分析”打开的是示例对话，不会把演示比赛发给后端。
+
+**预测记录（`/records`）、效果统计（`/statistics`）、长期记忆（`/memory`）：** 按需求文档 4.3、4.4、4.5 做的界面。
+
+- 记录：按时间、玩法、结果、来源（赛前记录 / 历史模拟 / 人工补录）、策略版本、判断来源（系统 / 个人）和球队筛选；表格上方是当前筛选的汇总；点一行看详情，分判断、当时的盘口、依据、复盘四块，复盘里写出结算算式；可把当前筛选结果导出为 CSV。
+- 统计：命中率（带 95% 区间和盈亏平衡刻度）、模拟盈亏、模拟 ROI、选择覆盖率四张指标卡，累计盈亏曲线（鼠标或左右方向键逐条查看）、结算分布、按周表现、按策略版本对比。三种记录来源不混在一起，每个比例旁边都有样本数；已分出输赢的样本少于 100 时提示区间有多宽。
+- 记忆：每个父块画成一台机柜，子块是柜里的插槽，指示灯表示状态（生效中、候选、已替代、已过期、已停用、已归档）；选中后看内容、来源、适用范围、有效期和引用次数，可以修改（存为新版本）、停用、把候选确认为固定要求、忘记（8 秒内可撤销）；右侧是维护记录。
+- 这三页没有真实数据来源。`stores/records.ts` 是预测记录唯一的取数入口，等后端有接口后改这里即可；记忆页在 `MemoryView.vue` 里直接载入演示内容。结算和统计公式在 `domain/` 里，和数据来源无关。
+
+**设置（`/settings`）：** 运行状态四项（后端连接含往返毫秒数、模型配置、盘口快照、浏览器）都是真实读数，可单独或全部重新检查。显示偏好有赔率格式、默认报价平台（从真实快照里出现过的平台中选）、动态背景、演示数据，保存在浏览器的 `localStorage` 里。“由后端决定的规则”列出数据源与更新频率、统一参考平台、模型与超时、额度提醒、正式记录规则和密钥，只读，不提供修改入口。
+
+**演示数据的做法（本地决定，需要负责人确认）：**
+
+- 内容是虚构的“沙盘联赛”：球队沿用战术桌小游戏里的“猎犬”“赤狐”，另外八支也是虚构的；报价平台叫“演示平台 A–F”。不出现任何真实球队、平台或比赛，避免被当成真实战绩。
+- 默认打开。需求文档验收标准第 10 条要求“没有真实数据时不显示虚构成绩”；这里的处理是每个用到演示数据的页面顶部都有提示带、状态条有标记、导出的 CSV 第一列写明“演示数据（虚构）”，并可在设置、提示带或命令面板里一键关闭，关闭后各页显示真实的空状态。正式使用前是否保留、是否改成默认关闭，由负责人决定；默认值在 `stores/preferences.ts` 的 `DEFAULTS.demo`。
+- 演示记录由固定种子生成，赢输走盘和盈亏不写在数据里，都由 `domain/settlement.ts` 现算，所以记录、统计、导出三处的数字一致。种子是挑过的（先跌后涨、总体小幅盈利），数字本身没有任何含义。
+- 真实数据存在时永远优先显示真实数据；状态条、聊天资料栏和设置页只显示真实读数，不受演示开关影响。
+
+**其他取舍：**
+
+- 删除了 `FeaturePlaceholder.vue`、`BackendStatus.vue` 和 `composables/useBackendHealth.ts`，连接检查并入 `stores/system.ts`。
+- 启动页菜单和站点卡片上，记录、统计、记忆三项的“待开发”标记改为“预览”；设置不再标记。
+- 后端未连接时不再在每页顶部显示一行错误文字，改为状态条上红色的“后端未连接”，完整原因在鼠标悬停提示和设置页里；聊天和比赛页仍各自显示自己的错误。
+- `index.html` 加了深色底色，打开瞬间不再闪白。
+
+验证（2026-11-12，本机 Windows 11 + Edge 无头模式，显卡 RTX 4060 Laptop）：
+
+- `npm run build`：类型检查与构建通过，`265 modules transformed`。首屏为 `index` 约 119 kB 加共用代码约 70 kB（gzip 后约 46 + 27 kB），样式约 60 kB；记录、统计、记忆、设置、比赛页各自按需加载，每个 11–21 kB；启动页 3D 包和比赛包大小没有变化。本次新增和改写的源文件单个最多 254 行。
+- 本机后端没有运行，也没有保存的盘口快照和模型配置。所以“有真实数据”的状态是在无头浏览器里拦截 `/api` 请求、返回模拟数据来核对的，共三种情形：后端不通；后端正常、模型已配置、快照里有 8 场比赛；后端正常但没有快照且演示数据关闭。**没有连过真实后端，也没有收到过真实模型的回答。**
+- 逐页截图核对了 1440×900 下的六个页面和 404，1920×1080 下的比赛页和记忆页，390×844 下的全部六页；390 和 900 宽度下实测页面横向溢出为 0。
+- 聊天（模拟接口）：选场后按 Ctrl+Enter 发送，先出现等待卡片和计时，随后回答按表格、列表、引用排版显示；输入文字后去比赛页再回来，输入还在；手机宽度下“本次资料”抽屉能打开，页面不出现整页滚动。
+- 比赛页：全部报价抽屉打开后连按 14 次 Tab，焦点始终在抽屉内，Esc 关闭；从演示比赛点“交给 AI 分析”进入的是示例对话。
+- 命令面板：Ctrl+K 打开，输入“统计”回车后到达 `/statistics`。
+- 记录页：三个筛选叠加后条数依次为 104、52、10；导出的文件以 BOM 开头、共 11 行（表头加 10 条），内容与列表一致。
+- 设置页：切到香港盘后示例从 1.91 变为 0.91，比赛页同一处报价从 1.89 变为 0.89；关闭演示数据后统计页显示“暂无数据”且没有提示带，重新打开后恢复。
+- 记忆页：把候选确认为固定要求、修改后版本加一、忘记后出现可撤销提示、撤销后恢复原位，搜索“小分”命中 4 条、其余 11 条压暗。
+- 启动页点“进入系统”后到达原本要去的 `/matches`，页面上只剩背景这一块画布。
+- “减少动态效果”下 1 秒内没有任何动画帧请求；正常情况下背景每秒绘制约 30 次，画布 880×550。
+
+边界：这一轮没有连接真实后端、真实盘口和真实模型，真实回答的排版（尤其是很长或格式不规整的回答）未经实际检验；未在手机实机、Safari、Firefox、核显或低性能设备上运行，背景在弱显卡上的开销未知；界面只做了截图自检，没有经过项目负责人或美术评审；导出的 CSV 没有在 Excel 里实际打开过；键盘操作只核对了命令面板和抽屉，没有用读屏软件走过完整流程。聊天把发送方式改成 Ctrl/⌘+Enter 是出于“发送要花钱”的考虑自行决定的。

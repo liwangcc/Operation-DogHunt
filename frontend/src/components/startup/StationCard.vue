@@ -9,10 +9,10 @@ const emit = defineEmits<{ enter: []; back: [] }>()
 <template>
   <section class="station-card" :aria-label="`${module.label}站点`">
     <p class="card-place">{{ module.mark }} · {{ module.place }}</p>
-    <h2>{{ module.label }}<span v-if="module.planned" class="card-tag">待开发</span></h2>
+    <h2>{{ module.label }}<span v-if="module.planned" class="card-tag">界面预览</span></h2>
     <p class="card-summary">{{ module.summary }}</p>
     <p v-if="module.id === 'assistant'" class="card-note">再点一下战术桌，可以换一套战术演示。</p>
-    <p v-else-if="module.planned" class="card-note">这个模块目前只有预留页面，尚未连接业务数据。</p>
+    <p v-else-if="module.planned" class="card-note">这个模块目前是界面预览，用虚构的演示数据展示，尚未连接业务数据。</p>
     <div class="card-actions">
       <button type="button" class="card-enter" :disabled="disabled" @click="emit('enter')">进入{{ module.label }} <span aria-hidden="true">→</span></button>
       <button type="button" class="card-back" :disabled="disabled" @click="emit('back')">返回</button>
