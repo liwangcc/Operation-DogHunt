@@ -41,11 +41,11 @@ const summary = computed(() => {
 .line-strip { display: flex; align-items: flex-end; gap: 4px; min-height: 40px; padding: 6px 8px 5px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); }
 .line-col { display: flex; flex: 1 1 0; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
 .line-dots { display: flex; flex-wrap: wrap-reverse; justify-content: center; gap: 2px; max-width: 46px; }
-.line-dots i { width: 6px; height: 6px; border-radius: 1px; background: rgba(148, 180, 210, .34); transition: background .18s, box-shadow .18s; }
-.line-col.mode .line-dots i { background: rgba(148, 180, 210, .62); }
-.line-dots i.on { background: var(--cyan); box-shadow: 0 0 6px rgba(73, 221, 235, .8); }
-.line-value { font-size: 11px; font-variant-numeric: tabular-nums; line-height: 1; color: var(--text-3); white-space: nowrap; }
-.line-col.mode .line-value { color: var(--text); font-weight: 600; }
+.line-dots i { width: 6px; height: 6px; border-radius: 1px; background: rgba(160, 190, 202, .28); transition: background .14s; }
+.line-col.mode .line-dots i { background: rgba(160, 190, 202, .56); }
+.line-dots i.on { background: var(--cyan); }
+.line-value { font-family: var(--font-num); font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1; color: var(--text-3); white-space: nowrap; }
+.line-col.mode .line-value { color: var(--text); }
 .line-none { align-self: center; font-size: 11px; color: var(--text-3); }
 .large { min-height: 64px; gap: 8px; padding: 12px 14px 10px; }
 .large .line-dots { gap: 3px; max-width: 70px; }

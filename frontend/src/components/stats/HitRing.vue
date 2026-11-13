@@ -35,8 +35,8 @@ const tick = computed(() => (props.breakEven === null ? null : props.breakEven *
 <style scoped>
 .ring { flex: 0 0 auto; }
 circle { fill: none; }
-.track { stroke: rgba(148, 180, 210, .14); stroke-width: 8; }
-.value { stroke: var(--cyan); stroke-width: 8; stroke-linecap: butt; filter: drop-shadow(0 0 5px rgba(73, 221, 235, .55)); transition: stroke-dasharray .8s var(--ease-out); }
-.band { stroke: rgba(148, 180, 210, .5); stroke-width: 2; transition: stroke-dasharray .8s var(--ease-out), stroke-dashoffset .8s var(--ease-out); }
-.tick { stroke: var(--amber); stroke-width: 2.5; stroke-linecap: round; transition: transform .8s var(--ease-out); }
+.track { stroke: rgba(160, 190, 202, .12); stroke-width: 5; }
+.value { stroke: var(--cyan); stroke-width: 5; stroke-linecap: butt; transition: stroke-dasharray .5s var(--ease-out); }
+.band { stroke: rgba(160, 190, 202, .46); stroke-width: 1.5; transition: stroke-dasharray .5s var(--ease-out), stroke-dashoffset .5s var(--ease-out); }
+.tick { stroke: var(--amber); stroke-width: 2; stroke-linecap: butt; transition: transform .5s var(--ease-out); }
 </style>

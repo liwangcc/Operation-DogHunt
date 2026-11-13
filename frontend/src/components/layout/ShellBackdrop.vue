@@ -49,19 +49,19 @@ onBeforeUnmount(close)
 <style scoped>
 .backdrop {
   position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
-  /* 静态底图：与启动页加载时的底图同一套颜色。 */
+  /* 静态底图：暗室上方远处的一点窗光，和动态背景停下来时的样子一致。 */
   background:
-    radial-gradient(ellipse 70% 22% at 60% 30%, rgba(40, 150, 175, .22), transparent 72%),
-    radial-gradient(ellipse 90% 16% at 50% 46%, rgba(120, 70, 30, .16), transparent 70%),
-    linear-gradient(#0a1b30 0%, #081526 46%, #050c17 100%);
+    radial-gradient(ellipse 60% 16% at 58% 14%, rgba(70, 130, 145, .16), transparent 72%),
+    radial-gradient(ellipse 80% 10% at 46% 24%, rgba(120, 90, 50, .08), transparent 70%),
+    linear-gradient(#0a1015 0%, #080c10 40%, #06090c 100%);
 }
-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; animation: backdrop-in 1.4s ease both; }
+canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; animation: backdrop-in 1.2s ease both; }
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
-/* 左侧导航和页面下半部分压得更暗；上方留着亮度，像控制台上方的一排窗。 */
+/* 窗外的夜色只留在页面最上面一条；往下很快沉进底色，面板和文字后面是安静的。 */
 .backdrop-shade {
   position: absolute; inset: 0;
   background:
-    linear-gradient(90deg, rgba(5, 11, 20, .7) 0, rgba(5, 11, 20, .2) 24%, rgba(5, 11, 20, 0) 60%),
-    linear-gradient(180deg, rgba(5, 11, 20, 0) 0, rgba(5, 11, 20, .25) 38%, rgba(5, 11, 20, .7) 100%);
+    linear-gradient(90deg, rgba(8, 12, 16, .6) 0, rgba(8, 12, 16, 0) 30%),
+    linear-gradient(180deg, rgba(8, 12, 16, .25) 0, rgba(8, 12, 16, .7) 26%, rgba(8, 12, 16, .94) 48%, var(--bg-1) 70%);
 }
 </style>

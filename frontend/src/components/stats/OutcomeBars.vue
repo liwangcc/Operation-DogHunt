@@ -47,24 +47,25 @@ const SEGMENTS = [
 <style scoped>
 .outcomes { display: grid; gap: 18px; }
 .outcome-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-.outcome-head strong { font-size: 14px; font-weight: 600; letter-spacing: .1em; }
+.outcome-head strong { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
 .outcome-head span { font-size: 12px; color: var(--text-3); }
-.outcome-bar { display: flex; gap: 2px; height: 30px; }
-.outcome-bar i { display: grid; place-items: center; flex-basis: 0; min-width: 20px; border-radius: 2px; font-style: normal; transition: flex-grow .6s var(--ease-out); }
-.outcome-bar i span { font-size: 12px; font-weight: 700; color: #06101c; }
-.outcome-bar.empty { align-items: center; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 2px; font-size: 12px; color: var(--text-3); }
-.win { background: var(--green); }
-.loss { background: var(--red); }
-.push { background: var(--violet); }
-.void { background: #6c8097; }
-.pending { background: repeating-linear-gradient(-45deg, rgba(73, 221, 235, .75) 0 4px, rgba(73, 221, 235, .45) 4px 8px); }
-.pick { background: var(--cyan); }
-.pass { background: #7f95a8; }
-.lack { background: var(--amber); }
+.outcome-bar { display: flex; gap: 2px; height: 26px; }
+.outcome-bar i { display: grid; place-items: center; flex-basis: 0; min-width: 20px; border-radius: 1px; font-style: normal; transition: flex-grow .4s var(--ease-out); }
+.outcome-bar i span { font-family: var(--font-num); font-size: 12.5px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
+.outcome-bar.empty { align-items: center; padding: 0 12px; border: 1px dashed var(--line-2); border-radius: 1px; font-size: 12px; color: var(--text-3); }
+/* 色块比文字用的同名颜色压暗一级：面积大，原色会抢过页面上的读数。 */
+.win { background: color-mix(in srgb, var(--green) 80%, #0b1116); }
+.loss { background: color-mix(in srgb, var(--red) 80%, #0b1116); }
+.push { background: color-mix(in srgb, var(--violet) 80%, #0b1116); }
+.void { background: #66777f; }
+.pending { background: repeating-linear-gradient(-45deg, rgba(134, 212, 221, .7) 0 3px, rgba(134, 212, 221, .4) 3px 7px); }
+.pick { background: color-mix(in srgb, var(--cyan) 80%, #0b1116); }
+.pass { background: #7b8b93; }
+.lack { background: color-mix(in srgb, var(--amber) 80%, #0b1116); }
 .decisions { display: grid; gap: 0; padding-top: 18px; border-top: 1px solid var(--line); }
 .decisions .legend { margin-top: 10px; }
 .outcome-note { margin: 10px 0 0; font-size: 12px; line-height: 1.7; color: var(--text-3); }
 .legend { display: flex; gap: 6px 16px; flex-wrap: wrap; margin: 0; padding: 0; list-style: none; font-size: 12px; color: var(--text-2); }
 .legend li { display: flex; align-items: center; gap: 6px; }
-.legend i { width: 10px; height: 10px; border-radius: 2px; }
+.legend i { width: 9px; height: 9px; border-radius: 1px; }
 </style>

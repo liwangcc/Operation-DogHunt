@@ -105,36 +105,37 @@ const formula = computed(() => {
 </template>
 
 <style scoped>
-.record-match { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; font-size: 22px; font-weight: 700; letter-spacing: .06em; }
-.record-match span { font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .1em; color: var(--text-3); }
+.record-match { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; font-size: 21px; font-weight: 600; letter-spacing: .04em; }
+.record-match span { font-family: var(--font-num); font-size: 11px; font-weight: 500; letter-spacing: .14em; color: var(--text-3); }
 .record-when { margin: 8px 0 0; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-2); }
 .record-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 
 .block { padding: 0 0 22px; margin-bottom: 22px; border-bottom: 1px solid var(--line); }
 .block:last-child { margin-bottom: 0; border-bottom: 0; }
-.block h3 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: .14em; }
-.block h3 span { font-size: 13px; font-style: italic; font-weight: 800; color: var(--cyan); }
-.block h4 { margin: 14px 0 8px; font-size: 12px; font-weight: 500; letter-spacing: .14em; color: var(--text-3); }
-.verdict { margin: 0 0 14px; font-size: 30px; font-style: italic; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .02em; line-height: 1.2; }
-.verdict.muted { color: var(--text-2); }
+.block h3 { display: flex; align-items: baseline; gap: 10px; margin: 0 0 12px; font-size: 14px; font-weight: 600; letter-spacing: .08em; }
+.block h3 span { font-family: var(--font-num); font-size: 13px; font-weight: 500; letter-spacing: .04em; color: var(--cyan); }
+.block h4 { margin: 14px 0 8px; font-size: 12px; font-weight: 400; letter-spacing: .08em; color: var(--text-3); }
+/* 判断本身是这一页最大的字：方向加盘口。 */
+.verdict { margin: 0 0 14px; font-family: var(--font-num); font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: .03em; line-height: 1.2; }
+.verdict.muted { font-family: var(--font-sans); font-weight: 400; color: var(--text-2); }
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 18px; margin: 0; }
-.facts dt { font-size: 11px; letter-spacing: .14em; color: var(--text-3); }
+.facts dt { font-size: 12px; letter-spacing: .06em; color: var(--text-3); }
 .facts dd { margin: 3px 0 0; font-size: 14px; }
-.facts .strong { font-size: 18px; font-style: italic; font-weight: 700; }
+.facts .strong { font-family: var(--font-num); font-size: 18px; font-weight: 500; letter-spacing: .02em; }
 .block-note { margin: 12px 0 0; font-size: 12px; line-height: 1.75; color: var(--text-3); }
 .points { display: grid; gap: 6px; margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.75; }
 .points li::marker { color: var(--cyan); }
 .points.risk li::marker { color: var(--amber); }
 
 .score { display: flex; align-items: baseline; gap: 12px; margin: 0 0 14px; font-size: 15px; }
-.score strong { font-size: 30px; font-style: italic; font-weight: 800; line-height: 1.1; }
-.score small { padding: 1px 6px; border: 1px solid var(--line-2); border-radius: 2px; font-size: 11px; color: var(--text-2); }
+.score strong { font-family: var(--font-num); font-size: 28px; font-weight: 500; letter-spacing: .03em; line-height: 1.1; }
+.score small { padding: 1px 6px; border: 1px solid var(--line-2); border-radius: var(--radius); font-size: 11px; color: var(--text-2); }
 .settle { display: grid; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); }
 .settle-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 14px; }
 .settle-row:last-child { border-bottom: 0; }
-.settle-row > span { flex: 0 0 76px; font-size: 12px; letter-spacing: .1em; color: var(--text-3); }
+.settle-row > span { flex: 0 0 76px; font-size: 12px; letter-spacing: .06em; color: var(--text-3); }
 .settle-row code { font-family: inherit; font-size: 15px; font-weight: 600; }
 .settle-row small { font-size: 12px; color: var(--text-3); }
-.note { margin: 14px 0 0; padding: 10px 14px; border-left: 2px solid var(--line-3); background: rgba(148, 180, 210, .05); font-size: 14px; line-height: 1.75; }
-.note span { display: block; font-size: 11px; letter-spacing: .14em; color: var(--text-3); }
+.note { margin: 14px 0 0; padding: 10px 14px; border-left: 1px solid var(--line-3); background: rgba(160, 190, 202, .04); font-size: 14px; line-height: 1.75; }
+.note span { display: block; font-size: 12px; letter-spacing: .08em; color: var(--text-3); }
 </style>

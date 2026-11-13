@@ -65,31 +65,34 @@ const drawerOpen = ref(false)
 </template>
 
 <style scoped>
-.match-card { container-type: inline-size; min-width: 0; padding: 18px 20px 16px; overflow: hidden; transition: border-color .2s, box-shadow .2s, transform .2s; }
-/* 卡片顶上一条细线：左边是客队队色，右边是主队队色。 */
-.match-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 2px; background: linear-gradient(90deg, var(--away), transparent 42%, transparent 58%, var(--home)); opacity: .9; }
-.match-card:hover { border-color: var(--line-3); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 14px 40px rgba(2, 6, 12, .45); transform: translateY(-2px); }
+.match-card { container-type: inline-size; min-width: 0; padding: 18px 20px 16px; overflow: hidden; transition: border-color .14s; }
+/* 卡片顶上一条发丝线：左边是客队队色，右边是主队队色。 */
+.match-card::before { content: ''; position: absolute; inset: 0 0 auto; height: 1px; background: linear-gradient(90deg, var(--away), transparent 40%, transparent 60%, var(--home)); opacity: .75; }
+.match-card:hover { border-color: var(--line-2); }
 
 .card-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.card-time { font-size: 24px; font-style: italic; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: .01em; line-height: 1; }
-.tag-key { letter-spacing: .14em; opacity: .85; }
+.card-time { font-family: var(--font-num); font-size: 23px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .03em; line-height: 1; }
+/* 倒计时是读数，不是状态：不上色块，只让数字本身亮一点。 */
+.card-top .tag--info { height: auto; padding: 0; border: 0; background: none; font-size: 12px; color: var(--text-3); }
+.card-top .tag--info .num { font-family: var(--font-num); font-size: 14px; letter-spacing: .04em; color: var(--cyan); }
+.tag-key { letter-spacing: .08em; }
 
 .face-off { display: flex; align-items: center; gap: 12px; padding: 18px 0 16px; }
 .side { display: flex; flex: 1 1 0; align-items: center; gap: 12px; min-width: 0; }
 .side.home { justify-content: flex-end; text-align: right; }
 .side-text { min-width: 0; }
-.side-text strong { display: block; overflow: hidden; font-size: 18px; font-weight: 600; letter-spacing: .06em; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
-.side-text small { display: block; overflow: hidden; font-size: 11px; letter-spacing: .04em; color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
-.versus { flex: 0 0 auto; font-size: 11px; font-style: italic; font-weight: 800; letter-spacing: .14em; color: var(--text-3); }
+.side-text strong { display: block; overflow: hidden; font-size: 17px; font-weight: 600; letter-spacing: .04em; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.side-text small { display: block; overflow: hidden; font-size: 11px; letter-spacing: .02em; color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
+.versus { flex: 0 0 auto; font-family: var(--font-num); font-size: 11px; font-weight: 500; letter-spacing: .14em; color: var(--text-3); }
 .pregame-note { margin: -6px 0 12px; font-size: 12px; color: var(--amber); }
 
-.markets { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.market { display: grid; gap: 8px; align-content: start; min-width: 0; }
+.markets { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.market { display: grid; gap: 10px; align-content: start; min-width: 0; }
 
 .card-foot { display: flex; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
 .book-field { display: flex; flex: 1; align-items: center; gap: 10px; min-width: 0; font-size: 12px; color: var(--text-3); }
-.book-field label { white-space: nowrap; letter-spacing: .1em; }
-.book-field .select { flex: 0 1 190px; min-width: 0; height: 30px; }
+.book-field label { white-space: nowrap; letter-spacing: .06em; }
+.book-field .select { flex: 0 1 190px; min-width: 0; height: 28px; }
 .card-foot .btn .num { margin-left: 2px; font-size: 11px; }
 
 @container (max-width: 470px) {

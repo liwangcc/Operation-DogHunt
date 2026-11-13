@@ -44,17 +44,18 @@ const old = computed(() => !props.market?.updated_at || props.now - Date.parse(p
 </template>
 
 <style scoped>
+/* 报价写成账页：表头一条线，每个方向一行，行间只有发丝线，不套盒子。 */
 .quote { min-width: 0; }
-.quote-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-.quote-title { font-size: 12px; letter-spacing: .14em; color: var(--text-2); }
+.quote-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding-bottom: 7px; border-bottom: 1px solid var(--line-2); }
+.quote-title { font-size: 12px; letter-spacing: .08em; color: var(--text-2); }
 .quote-caption { font-size: 11px; color: var(--text-3); }
-.quote-row { display: flex; align-items: baseline; gap: 10px; margin-top: 4px; padding: 7px 10px 6px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); }
+.quote-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 0 7px; border-bottom: 1px solid var(--line); }
 .quote-side { flex: 1; min-width: 0; overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
 .quote-side small { margin-left: 6px; font-size: 11px; color: var(--text-3); }
-.quote-point { font-size: 19px; font-style: italic; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.01em; line-height: 1.2; white-space: nowrap; }
-.quote-price { min-width: 36px; font-size: 13px; font-variant-numeric: tabular-nums; text-align: right; color: var(--text-2); }
+.quote-point { font-family: var(--font-num); font-size: 19px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .01em; line-height: 1.2; white-space: nowrap; }
+.quote-price { min-width: 38px; font-family: var(--font-num); font-size: 13px; font-variant-numeric: tabular-nums; letter-spacing: .02em; text-align: right; color: var(--text-2); }
 .quote-none { font-size: 12px; color: var(--text-3); }
-.quote-row.missing { border-style: dashed; }
+.quote-row.missing { border-bottom-style: dashed; }
 .quote-time { margin: 7px 0 0; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); }
 .quote-time.old { color: var(--amber); }
 </style>

@@ -46,42 +46,38 @@ const counts = computed(() => ({
 </template>
 
 <style scoped>
-.rack { display: flex; flex-direction: column; min-width: 0; padding: 16px 16px 12px; transition: border-color .2s, box-shadow .2s; }
-.rack.current { border-color: var(--cyan-line); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 0 30px rgba(73, 221, 235, .1); }
+.rack { display: flex; flex-direction: column; min-width: 0; padding: 16px 16px 12px; transition: border-color .14s; }
+/* 选中的子块所在的机柜：外框亮一级。 */
+.rack.current { border-color: var(--cyan-line); }
 .rack-head { display: flex; align-items: baseline; gap: 10px; }
-.rack-index { font-size: 18px; font-style: italic; font-weight: 800; color: var(--cyan); }
-.rack-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .08em; }
+.rack-index { font-family: var(--font-num); font-size: 15px; font-weight: 500; letter-spacing: .04em; color: var(--cyan); }
+.rack-head h2 { flex: 1; min-width: 0; margin: 0; font-size: 15px; font-weight: 600; letter-spacing: .04em; }
 .rack-count { font-size: 12px; color: var(--text-3); }
 .rack-summary { min-height: 3.4em; margin: 6px 0 12px; font-size: 12px; line-height: 1.7; color: var(--text-2); }
 
-/* 机柜内部：左右两条带安装孔的立柱，中间是一条条插槽。 */
-.rack-bay {
-  position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; flex: 1; align-content: start; margin: 0; padding: 8px 18px; border: 1px solid var(--line); border-radius: var(--radius); list-style: none;
-  background:
-    radial-gradient(circle, rgba(148, 180, 210, .34) 1.2px, transparent 1.6px) 4px 6px / 9px 14px repeat-y,
-    radial-gradient(circle, rgba(148, 180, 210, .34) 1.2px, transparent 1.6px) calc(100% - 4px) 6px / 9px 14px repeat-y,
-    var(--well);
-}
+/* 机柜内部：一条条插槽，槽与槽之间只有发丝线。 */
+.rack-bay { display: grid; grid-template-columns: minmax(0, 1fr); flex: 1; align-content: start; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); list-style: none; }
+.rack-bay li + li { border-top: 1px solid var(--line); }
 .slot {
-  display: flex; align-items: center; gap: 9px; width: 100%; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: 3px;
-  background: linear-gradient(180deg, rgba(20, 44, 71, .7), rgba(12, 26, 45, .9)); color: var(--text-2); font-size: 13px; text-align: left;
-  transition: color .16s, border-color .16s, background .16s, opacity .2s, transform .16s;
+  display: flex; align-items: center; gap: 9px; width: 100%; height: 36px; padding: 0 12px; border: 0; border-radius: 0;
+  background: transparent; color: var(--text-2); font-size: 13px; text-align: left;
+  transition: color .14s, background .14s, opacity .16s;
 }
-.slot:hover { border-color: var(--line-3); color: var(--text); transform: translateX(2px); }
-.slot.on { border-color: var(--cyan); background: linear-gradient(90deg, rgba(73, 221, 235, .26), rgba(21, 62, 82, .5)); color: var(--text); }
+.slot:hover { background: rgba(160, 190, 202, .05); color: var(--text); }
+.slot.on { background: var(--cyan-soft); color: var(--text); box-shadow: inset 2px 0 0 var(--cyan); }
 .slot.dim { opacity: .28; }
-.led { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); }
-.active .led { background: var(--green); box-shadow: 0 0 7px rgba(94, 212, 162, .9); }
-.candidate .led { background: var(--amber); box-shadow: 0 0 7px rgba(231, 170, 98, .9); animation: led-blink 1.8s ease-in-out infinite; }
+/* 指示灯：只用颜色和空心、实心区分状态，不闪、不发光。 */
+.led { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); }
+.active .led { background: var(--green); }
+.candidate .led { background: transparent; box-shadow: inset 0 0 0 1.5px var(--amber); }
 .superseded .led { background: var(--violet); }
-.disabled .led { background: transparent; border: 1.5px solid var(--red); }
-@keyframes led-blink { 50% { opacity: .3; } }
+.disabled .led { background: transparent; box-shadow: inset 0 0 0 1.5px var(--red); }
 .slot-id { flex: 0 0 auto; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); }
 .slot-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .superseded .slot-title, .expired .slot-title, .archived .slot-title, .disabled .slot-title { color: var(--text-3); }
-.superseded .slot-title { text-decoration: line-through; text-decoration-color: rgba(148, 180, 210, .5); }
+.superseded .slot-title { text-decoration: line-through; text-decoration-color: rgba(160, 190, 202, .5); }
 .slot-state { flex: 0 0 auto; font-size: 11px; color: var(--text-3); }
 .candidate .slot-state { color: var(--amber); }
 .rack-empty { padding: 14px 4px; font-size: 12px; text-align: center; color: var(--text-3); }
-.rack-foot { margin: 10px 0 0; font-size: 11px; letter-spacing: .04em; color: var(--text-3); }
+.rack-foot { margin: 10px 0 0; font-size: 11px; letter-spacing: .02em; color: var(--text-3); }
 </style>

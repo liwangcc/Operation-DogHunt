@@ -267,7 +267,7 @@ onBeforeUnmount(() => {
     <div v-show="playing === 'off'" class="startup-ui">
       <header class="startup-header">
         <h1 class="startup-title">
-          <span class="title-top">OPERATION<i aria-hidden="true"></i></span>
+          <span class="title-top">OPERATION</span>
           <span class="title-main">DOGHUNT</span>
         </h1>
         <p class="startup-tagline">你的比赛分析指挥室</p>
@@ -318,7 +318,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-.startup { position: fixed; inset: 0; overflow: hidden; background: #081321; color: #edf5fa; user-select: none; -webkit-user-select: none; }
+.startup { position: fixed; inset: 0; overflow: hidden; background: var(--bg-1); color: #e9f0f2; user-select: none; -webkit-user-select: none; }
 .startup-scene, .startup-poster, .startup-scene canvas, .startup-scrim, .startup-bars, .startup-ui, .startup-fade { position: absolute; inset: 0; }
 
 /* 静态画面：场景加载中或无法显示时的底图。 */
@@ -337,8 +337,8 @@ onBeforeUnmount(() => {
 .startup-scrim {
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(8, 19, 33, .8) 0%, rgba(8, 19, 33, .46) 20%, rgba(8, 19, 33, 0) 40%),
-    linear-gradient(0deg, rgba(8, 19, 33, .5) 0%, rgba(8, 19, 33, 0) 26%);
+    linear-gradient(90deg, rgba(6, 12, 20, .84) 0%, rgba(6, 12, 20, .48) 20%, rgba(6, 12, 20, 0) 40%),
+    linear-gradient(0deg, rgba(6, 12, 20, .5) 0%, rgba(6, 12, 20, 0) 26%);
 }
 
 /* 开场的电影遮幅：场景就绪后上下两条黑边缓缓收起。 */
@@ -350,66 +350,66 @@ onBeforeUnmount(() => {
 .is-ready .startup-bars::after { transform: translateY(101%); }
 
 /* 界面层本身不接收指针，拖动可以穿过文字落到场景上；只有按钮可点。 */
-.startup-ui { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 52px 56px; pointer-events: none; }
+.startup-ui { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 54px 56px 52px; pointer-events: none; }
 .startup-ui button { pointer-events: auto; }
-.startup :focus-visible { outline: 2px solid #edf5fa; outline-offset: 3px; }
+.startup :focus-visible { outline: 2px solid #e9f0f2; outline-offset: 3px; }
 
+/* 行动代号：正体、拉开字距，和内页侧栏上的写法一致。 */
 .startup-title { margin: 0; font-size: inherit; font-weight: inherit; line-height: 1; letter-spacing: 0; }
-.title-top { display: flex; align-items: center; gap: 14px; font-size: clamp(20px, 2.1vw, 30px); font-style: italic; font-weight: 300; letter-spacing: .06em; }
-.title-top i { width: 26px; height: 7px; background: #49ddeb; transform: skewX(-38deg); }
-.title-main { display: block; margin-top: 6px; padding-right: .12em; font-size: clamp(44px, 5.4vw, 80px); font-style: italic; font-weight: 800; letter-spacing: -.01em; color: transparent; background: linear-gradient(180deg, #fff 10%, #b9c8f6 100%); -webkit-background-clip: text; background-clip: text; }
-.startup-tagline { margin: 22px 0 0; padding-left: 14px; border-left: 2px solid #49ddeb; font-size: 15px; line-height: 1.2; letter-spacing: .34em; }
+.title-top { display: block; font-size: clamp(12px, 1vw, 15px); font-weight: 400; letter-spacing: .56em; color: #b7c5cc; }
+.title-main { display: block; margin-top: 14px; font-family: var(--font-num); font-size: clamp(40px, 4.8vw, 70px); font-weight: 600; letter-spacing: .18em; color: #eef4f6; text-shadow: 0 2px 26px rgba(3, 7, 12, .7); }
+.startup-tagline { margin: 22px 0 0; padding-left: 14px; border-left: 1px solid var(--cyan); font-size: 14px; line-height: 1.2; letter-spacing: .3em; color: #c5d2d8; }
 
-.startup-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; width: 100%; }
+.startup-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; width: 100%; }
+/* 两个主按钮：一块深色的面，左边缘一道亮线；不发光。 */
 .enter-button {
   display: flex; align-items: center; justify-content: space-between;
-  width: 264px; max-width: 100%; height: 58px; padding: 0 22px 0 28px;
-  border: 1.5px solid #49ddeb; border-radius: 3px; background: rgba(8, 19, 33, .86); color: #edf5fa;
-  font-size: 19px; font-weight: 600; letter-spacing: .3em;
-  box-shadow: 0 0 0 4px rgba(73, 221, 235, .08), 0 0 26px rgba(73, 221, 235, .3), inset 0 0 20px rgba(73, 221, 235, .14);
-  transition: background .2s, box-shadow .2s, transform .2s;
+  width: 264px; max-width: 100%; height: 54px; padding: 0 20px 0 26px;
+  border: 1px solid rgba(134, 212, 221, .62); border-radius: var(--radius); background: rgba(5, 9, 12, .8); color: #eef6f8;
+  font-size: 17px; font-weight: 600; letter-spacing: .26em; box-shadow: inset 3px 0 0 var(--cyan);
+  transition: background .16s, border-color .16s;
 }
-.enter-button:hover:not(:disabled) { background: rgba(21, 62, 82, .92); box-shadow: 0 0 0 4px rgba(73, 221, 235, .14), 0 0 34px rgba(73, 221, 235, .45), inset 0 0 24px rgba(73, 221, 235, .22); }
-.enter-button:active:not(:disabled) { transform: translateY(1px); }
-.enter-arrow { font-size: 24px; letter-spacing: 0; }
+.enter-button:hover:not(:disabled) { border-color: var(--cyan); background: rgba(22, 46, 54, .9); }
+.enter-arrow { font-size: 20px; letter-spacing: 0; color: var(--cyan); }
 .play-button {
   display: flex; align-items: center; justify-content: space-between;
-  width: 264px; max-width: 100%; height: 46px; padding: 0 20px 0 28px;
-  border: 1.5px solid #e7aa62; border-radius: 3px; background: rgba(8, 19, 33, .86); color: #edf5fa;
-  font-size: 16px; font-weight: 600; letter-spacing: .24em;
-  box-shadow: 0 0 20px rgba(231, 170, 98, .2), inset 0 0 16px rgba(231, 170, 98, .1);
-  transition: background .2s, box-shadow .2s;
+  width: 264px; max-width: 100%; height: 44px; padding: 0 20px 0 26px;
+  border: 1px solid rgba(211, 171, 111, .56); border-radius: var(--radius); background: rgba(5, 9, 12, .8); color: #eef6f8;
+  font-size: 15px; font-weight: 600; letter-spacing: .22em; box-shadow: inset 3px 0 0 var(--amber);
+  transition: background .16s, border-color .16s;
 }
-.play-button:hover:not(:disabled) { background: rgba(70, 46, 20, .9); box-shadow: 0 0 28px rgba(231, 170, 98, .4), inset 0 0 20px rgba(231, 170, 98, .18); }
-.play-tag { font-size: 12px; letter-spacing: .3em; color: #e7aa62; }
+.play-button:hover:not(:disabled) { border-color: var(--amber); background: rgba(52, 40, 22, .9); }
+.play-tag { font-family: var(--font-num); font-size: 12px; font-weight: 500; letter-spacing: .24em; color: var(--amber); }
 
-.startup-status { display: flex; align-items: center; gap: 10px; min-height: 22px; margin: 0; font-size: 13px; letter-spacing: .12em; color: #a7b9ca; text-shadow: 0 1px 6px rgba(8, 19, 33, .9); }
-.hint-icon { position: relative; flex: 0 0 auto; width: 13px; height: 20px; border: 1.5px solid #a7b9ca; border-radius: 7px; }
-.hint-icon::after { content: ''; position: absolute; top: 4px; left: 50%; width: 1.5px; height: 5px; background: #a7b9ca; transform: translateX(-50%); }
-.startup-alert { margin: 0; padding: 8px 12px; border-left: 2px solid #e7aa62; background: rgba(8, 19, 33, .86); font-size: 13px; }
+.startup-status { display: flex; align-items: center; gap: 10px; min-height: 22px; margin: 0; font-size: 12px; letter-spacing: .1em; color: #a3b3bb; text-shadow: 0 1px 6px rgba(4, 8, 12, .9); }
+.hint-icon { position: relative; flex: 0 0 auto; width: 12px; height: 19px; border: 1px solid #a3b3bb; border-radius: 6px; }
+.hint-icon::after { content: ''; position: absolute; top: 4px; left: 50%; width: 1px; height: 4px; background: #a3b3bb; transform: translateX(-50%); }
+.startup-alert { margin: 0; padding: 8px 12px; border-left: 2px solid var(--amber); background: rgba(5, 9, 12, .86); font-size: 13px; }
 
-.ghost-button { padding: 9px 16px; border: 1px solid rgba(167, 185, 202, .5); border-radius: 3px; background: rgba(8, 19, 33, .7); color: #a7b9ca; font-size: 13px; letter-spacing: .14em; transition: color .2s, border-color .2s; }
-.ghost-button:hover:not(:disabled) { border-color: #49ddeb; color: #edf5fa; }
-.ghost-button[aria-pressed='true'] { border-color: #49ddeb; color: #edf5fa; }
-.startup-corner { position: absolute; right: 56px; bottom: 52px; display: flex; gap: 10px; }
-.startup-card { position: absolute; right: 56px; bottom: 116px; }
+.ghost-button { height: 34px; padding: 0 14px; border: 1px solid rgba(160, 190, 202, .36); border-radius: var(--radius); background: rgba(5, 9, 12, .7); color: #a9b7be; font-size: 12px; letter-spacing: .1em; transition: color .16s, border-color .16s; }
+.ghost-button:hover:not(:disabled) { border-color: rgba(160, 190, 202, .7); color: #e9f0f2; }
+.ghost-button[aria-pressed='true'] { border-color: var(--cyan-line); color: #e9f0f2; }
+.startup-corner { position: absolute; right: 56px; bottom: 52px; display: flex; gap: 8px; }
+.startup-card { position: absolute; right: 56px; bottom: 108px; }
 
 /* 悬停标签：锚点跟着站点在画面上的位置移动。 */
 .station-tag { position: absolute; top: 0; left: 0; pointer-events: none; }
-.station-tag span { position: absolute; left: 14px; bottom: 14px; padding: 6px 12px; border: 1px solid rgba(73, 221, 235, .6); border-radius: 2px; background: rgba(8, 19, 33, .88); color: #edf5fa; font-size: 13px; letter-spacing: .14em; white-space: nowrap; }
-.station-tag::before { content: ''; position: absolute; left: -4px; top: -4px; width: 8px; height: 8px; border: 1.5px solid #49ddeb; border-radius: 50%; }
+.station-tag span { position: absolute; left: 14px; bottom: 14px; padding: 5px 11px; border: 1px solid rgba(134, 212, 221, .5); border-radius: var(--radius); background: rgba(5, 9, 12, .86); color: #e9f0f2; font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
+.station-tag::before { content: ''; position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border: 1px solid var(--cyan); border-radius: 50%; }
 
 /* 进入比赛的闪光：镜头俯冲到桌面时亮起，切到球馆后退去，把两个场景接在一起。 */
 .is-starting .startup-scrim, .is-playing .startup-scrim, .is-starting .startup-bars, .is-playing .startup-bars { display: none; }
 .is-playing .startup-scene canvas { cursor: default; }
 
-.startup-fade { pointer-events: none; background: #081321; opacity: 0; transition: opacity .55s ease; }
+/* 进入系统时淡到内页的底色，接上去不跳。 */
+.startup-fade { pointer-events: none; background: var(--bg-1); opacity: 0; transition: opacity .55s ease; }
 .is-entering .startup-fade { opacity: 1; }
 
 /* 手机与窄屏：标题缩小置顶，菜单变成一排可横滑的标签，进入按钮通栏放在底部安全区域内。 */
 @media (max-width: 700px) {
   .startup-ui { padding: 28px 22px calc(28px + env(safe-area-inset-bottom, 0px)); }
-  .startup-tagline { margin-top: 14px; font-size: 13px; letter-spacing: .24em; }
+  .title-main { margin-top: 10px; font-size: 36px; letter-spacing: .14em; }
+  .startup-tagline { margin-top: 14px; font-size: 13px; letter-spacing: .22em; }
   .startup-actions { align-items: stretch; gap: 12px; }
   /* 手机上进入按钮要贴近底部安全区域，所以把菜单标签排到它上面。 */
   .startup-menu-slot { order: -1; }
@@ -417,14 +417,14 @@ onBeforeUnmount(() => {
   .startup-status { justify-content: center; }
   .startup-corner { top: 28px; right: 22px; bottom: auto; flex-direction: column; align-items: flex-end; gap: 8px; }
   .startup-card { top: 150px; right: 22px; bottom: auto; left: 22px; width: auto; }
-  .startup-scrim { background: linear-gradient(180deg, rgba(8, 19, 33, .8) 0%, rgba(8, 19, 33, 0) 30%), linear-gradient(0deg, rgba(8, 19, 33, .88) 0%, rgba(8, 19, 33, 0) 40%); }
+  .startup-scrim { background: linear-gradient(180deg, rgba(6, 12, 20, .8) 0%, rgba(6, 12, 20, 0) 30%), linear-gradient(0deg, rgba(6, 12, 20, .88) 0%, rgba(6, 12, 20, 0) 40%); }
 }
 @media (max-height: 620px) {
   .startup-ui { padding-top: 22px; padding-bottom: 22px; }
-  .title-main { font-size: 40px; }
+  .title-main { margin-top: 8px; font-size: 36px; }
   .startup-tagline { margin-top: 12px; }
   .startup-corner { bottom: 22px; }
-  .startup-card { bottom: 80px; }
+  .startup-card { bottom: 72px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .startup-scene canvas, .startup-fade, .enter-button, .ghost-button, .play-button { transition: none; }

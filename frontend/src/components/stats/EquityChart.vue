@@ -170,26 +170,27 @@ onBeforeUnmount(() => observer?.disconnect())
 .equity { position: relative; min-height: 240px; outline-offset: 4px; touch-action: pan-y; cursor: crosshair; }
 svg { display: block; }
 .grid line { stroke: var(--line); stroke-width: 1; }
-.grid line.zero { stroke: var(--line-3); stroke-dasharray: 4 4; }
-.grid text { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+.grid line.zero { stroke: var(--line-3); stroke-dasharray: 3 4; }
+.grid text { fill: var(--text-3); font-family: var(--font-num); font-size: 11.5px; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
 .line { fill: none; stroke-linejoin: round; }
-.line.major { stroke-width: 2.2; stroke-dasharray: 1; stroke-dashoffset: 1; filter: drop-shadow(0 0 6px rgba(73, 221, 235, .5)); animation: draw 1.5s var(--ease-out) .15s forwards; }
-.line.minor { stroke-width: 1.3; opacity: 0; animation: appear .6s ease forwards; animation-delay: calc(.9s + var(--i) * .15s); }
-.area { opacity: 0; animation: appear .9s ease 1s forwards; }
+/* 主曲线出现时从左到右画一次，之后不再动。 */
+.line.major { stroke-width: 1.8; stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .7s var(--ease-out) .05s forwards; }
+.line.minor { stroke-width: 1.1; opacity: 0; animation: appear .3s ease .5s forwards; }
+.area { opacity: 0; animation: appear .4s ease .5s forwards; }
 @keyframes draw { to { stroke-dashoffset: 0; } }
-@keyframes appear { to { opacity: .85; } }
+@keyframes appear { to { opacity: .8; } }
 .cross { stroke: var(--line-3); stroke-width: 1; }
-.focus-dot { fill: var(--bg-1); stroke-width: 2; }
+.focus-dot { fill: var(--bg-1); stroke-width: 1.6; }
 .equity-none { display: grid; place-items: center; min-height: 240px; margin: 0; font-size: 13px; color: var(--text-3); }
 
-.tip { position: absolute; z-index: 2; min-width: 200px; padding: 10px 12px; border: 1px solid var(--cyan-line); border-radius: var(--radius); background: rgba(8, 19, 33, .96); box-shadow: 0 10px 30px rgba(2, 6, 12, .6); transform: translate(14px, -100%); pointer-events: none; white-space: nowrap; }
+.tip { position: absolute; z-index: 2; min-width: 200px; padding: 10px 12px; border: 1px solid var(--line-3); border-radius: var(--radius); background: var(--panel-solid); box-shadow: 0 12px 30px rgba(0, 0, 0, .5); transform: translate(14px, -100%); pointer-events: none; white-space: nowrap; }
 .tip.flip { transform: translate(calc(-100% - 14px), -100%); }
 .tip p { margin: 0; }
 .tip-when { font-size: 11px; color: var(--text-3); }
 .tip-match { margin-top: 4px !important; font-size: 13px; }
-.tip-pick { display: flex; justify-content: space-between; gap: 16px; margin-top: 2px !important; font-size: 15px; font-style: italic; font-weight: 700; }
+.tip-pick { display: flex; justify-content: space-between; gap: 16px; margin-top: 2px !important; font-family: var(--font-num); font-size: 15px; font-weight: 500; letter-spacing: .02em; }
 .tip-total { display: flex; align-items: baseline; gap: 8px; margin-top: 8px !important; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-3); }
-.tip-total strong { font-size: 18px; font-style: italic; font-weight: 800; color: var(--text); }
+.tip-total strong { font-family: var(--font-num); font-size: 18px; font-weight: 500; letter-spacing: .02em; color: var(--text); }
 .tip-total strong.pos { color: var(--green); }
 .tip-total strong.neg { color: var(--red); }
 </style>

@@ -90,23 +90,23 @@ const selected = computed(() => {
 
 <style scoped>
 .context { display: grid; gap: 0; align-content: start; }
-.context-block { padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.context-block { padding: 18px 22px; border-bottom: 1px solid var(--line); }
 .context-block:last-child { border-bottom: 0; }
 .context-block h2 { margin: 0 0 12px; font-weight: 400; }
-.snapshot { display: grid; gap: 7px; }
+.snapshot { display: grid; gap: 8px; }
 .snapshot-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
 .snapshot-row > span:first-child { color: var(--text-3); white-space: nowrap; }
-.snapshot-row strong { min-width: 0; overflow: hidden; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.snapshot-row strong { min-width: 0; overflow: hidden; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .context-note { margin: 10px 0 0; font-size: 12px; line-height: 1.75; color: var(--text-3); }
 .context-note .link { white-space: nowrap; }
-.selection-label { margin: 0; padding: 9px 12px; border: 1px solid var(--cyan-line); border-radius: var(--radius); background: var(--cyan-soft); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
-.selection-quotes { display: grid; gap: 12px; margin-top: 12px; }
+.selection-label { margin: 0; padding: 9px 12px; border: 1px solid rgba(134, 212, 221, .24); border-radius: var(--radius); background: var(--cyan-soft); font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.selection-quotes { display: grid; gap: 16px; margin-top: 14px; }
 .context-block .btn { margin-top: 10px; }
-.meter { margin-bottom: 12px; }
+.meter { margin-bottom: 14px; }
 .meter-head { display: flex; align-items: baseline; justify-content: space-between; font-size: 13px; color: var(--text-3); }
-.meter-head strong { font-size: 22px; font-style: italic; font-weight: 800; color: var(--text); }
-.meter-head small { font-size: 12px; font-style: normal; font-weight: 400; color: var(--text-3); }
-.meter-bar { height: 3px; margin-top: 6px; background: var(--line-2); overflow: hidden; }
-.meter-bar i { display: block; height: 100%; background: var(--cyan); transform-origin: left; transition: transform .4s var(--ease-out); }
+.meter-head strong { font-family: var(--font-num); font-size: 22px; font-weight: 500; letter-spacing: .02em; color: var(--text); }
+.meter-head small { font-size: 13px; font-weight: 400; color: var(--text-3); }
+.meter-bar { height: 2px; margin-top: 6px; background: var(--line-2); overflow: hidden; }
+.meter-bar i { display: block; height: 100%; background: var(--cyan); transform-origin: left; transition: transform .3s var(--ease-out); }
 .limits { display: grid; gap: 6px; margin: 0; padding-left: 16px; font-size: 12px; line-height: 1.7; color: var(--text-3); }
 </style>

@@ -72,16 +72,16 @@ defineExpose({
       <span class="composer-hint" :class="{ blocked: !ready && !loading }">{{ hint }}</span>
       <span v-if="text.length > MAX_LENGTH - 2000" class="composer-count num">{{ text.length }} / {{ MAX_LENGTH }}</span>
       <span class="composer-keys" aria-hidden="true"><kbd class="kbd">Enter</kbd> 发送 · <kbd class="kbd">Shift</kbd><kbd class="kbd">Enter</kbd> 换行</span>
-      <button type="submit" class="btn btn--primary" :disabled="disabled || !text.trim()">{{ loading ? '分析中…' : '发送' }} <span aria-hidden="true">↑</span></button>
+      <button type="submit" class="btn btn--solid" :disabled="disabled || !text.trim()">{{ loading ? '分析中…' : '发送' }} <span aria-hidden="true">↑</span></button>
     </div>
   </form>
 </template>
 
 <style scoped>
-.composer { border: 1px solid var(--line-2); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(16, 33, 55, .96), rgba(10, 22, 38, .97)); box-shadow: 0 -10px 40px rgba(2, 6, 12, .35); transition: border-color .2s, box-shadow .2s; }
-.composer:focus-within { border-color: var(--cyan-line); box-shadow: 0 -10px 40px rgba(2, 6, 12, .35), 0 0 0 3px rgba(73, 221, 235, .08), 0 0 28px rgba(73, 221, 235, .14); }
-.composer-selection { display: flex; align-items: center; gap: 10px; margin: 10px 10px 0; padding: 5px 4px 5px 10px; border: 1px solid var(--cyan-line); border-radius: var(--radius); background: var(--cyan-soft); font-size: 13px; }
-.selection-key { flex: 0 0 auto; font-size: 11px; letter-spacing: .16em; color: var(--cyan); }
+.composer { border: 1px solid var(--line-2); border-radius: var(--radius-lg); background: var(--panel-solid); box-shadow: inset 0 1px 0 rgba(200, 232, 238, .045); transition: border-color .16s; }
+.composer:focus-within { border-color: var(--cyan-line); }
+.composer-selection { display: flex; align-items: center; gap: 10px; margin: 10px 10px 0; padding: 4px 4px 4px 10px; border: 1px solid rgba(134, 212, 221, .24); border-radius: var(--radius); background: var(--cyan-soft); font-size: 13px; }
+.selection-key { flex: 0 0 auto; font-size: 11px; letter-spacing: .1em; color: var(--cyan); }
 .selection-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .composer-selection .icon-btn { width: 26px; height: 26px; }
 textarea { display: block; width: 100%; min-height: 54px; max-height: 200px; padding: 16px 18px 6px; border: 0; outline: 0; resize: none; background: transparent; color: var(--text); font-size: 15px; line-height: 1.7; }

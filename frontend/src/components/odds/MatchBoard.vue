@@ -60,7 +60,7 @@ onMounted(() => {
   <section class="page match-board" aria-labelledby="matches-heading" :aria-busy="boardBusy">
     <header class="page-head reveal">
       <div>
-        <p class="overline">Station 02 · Match Center</p>
+        <p class="overline"><b>02</b>一号工位</p>
         <h1 id="matches-heading" class="page-title">比赛与盘口</h1>
         <p class="page-sub">从今天，看到下一场。</p>
       </div>
@@ -134,29 +134,31 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.source { display: flex; flex-wrap: wrap; gap: 0; margin: 0 0 22px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(8, 19, 33, .55); }
-.source > div { display: flex; align-items: center; gap: 12px; padding: 9px 18px; border-right: 1px solid var(--line); }
-.source > div:last-child { border-right: 0; }
-.source dt { font-size: 11px; letter-spacing: .2em; color: var(--text-3); white-space: nowrap; }
+/* 数据来源：一行平铺的说明，不装进盒子。 */
+.source { display: flex; flex-wrap: wrap; gap: 8px 0; margin: 0 0 22px; }
+.source > div { display: flex; align-items: center; gap: 10px; padding: 0 18px; border-left: 1px solid var(--line-2); }
+.source > div:first-child { padding-left: 0; border-left: 0; }
+.source dt { font-size: 12px; letter-spacing: .08em; color: var(--text-3); white-space: nowrap; }
 .source dd { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; white-space: nowrap; }
 .alerts { display: grid; gap: 8px; margin-bottom: 22px; }
 .alerts:empty { display: none; }
 
 .toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
 .match-count { font-size: 12px; color: var(--text-3); white-space: nowrap; }
-.day-heading { display: flex; align-items: baseline; gap: 12px; margin: 26px 0 14px; font-size: 15px; font-weight: 600; letter-spacing: .1em; }
-.day-date { font-size: 22px; font-style: italic; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: 0; }
-.day-heading small { font-size: 12px; font-weight: 400; letter-spacing: .06em; color: var(--text-3); }
-.day-heading::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-2), transparent); }
-.match-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.day-heading { display: flex; align-items: baseline; gap: 12px; margin: 28px 0 14px; font-size: 14px; font-weight: 600; letter-spacing: .06em; }
+.day-date { font-family: var(--font-num); font-size: 21px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.day-heading small { font-size: 12px; font-weight: 400; letter-spacing: .02em; color: var(--text-3); }
+.day-heading::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.match-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .card-skeleton { display: grid; gap: 14px; padding: 20px; }
 .card-skeleton .skeleton { height: 22px; }
 .card-skeleton .skeleton:nth-child(2) { height: 54px; }
 .card-skeleton .skeleton:nth-child(3) { height: 120px; }
-.spinning { animation: spin 1s linear infinite; }
+/* 正在向供应商取数：这是真实的进行中状态，图标才转。 */
+.spinning { animation: spin 1.2s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.notes { display: grid; gap: 6px; margin: 34px 0 0; padding: 16px 0 0 18px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--text-3); }
+.notes { display: grid; gap: 6px; margin: 36px 0 0; padding: 16px 0 0 18px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--text-3); }
 @media (min-width: 1700px) {
   .match-board { max-width: 1680px; }
   .match-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -165,7 +167,8 @@ onMounted(() => {
   .match-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
-  .source > div { flex: 1 1 100%; justify-content: space-between; border-right: 0; border-bottom: 1px solid var(--line); padding: 8px 14px; }
+  .source { gap: 0; border: 1px solid var(--line); border-radius: var(--radius); }
+  .source > div, .source > div:first-child { flex: 1 1 100%; justify-content: space-between; border-left: 0; border-bottom: 1px solid var(--line); padding: 8px 14px; }
   .source > div:last-child { border-bottom: 0; }
   .page-actions { width: 100%; }
   .page-actions .btn { flex: 1; }

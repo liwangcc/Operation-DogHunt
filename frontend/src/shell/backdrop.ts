@@ -37,7 +37,7 @@ vec3 bokeh(vec2 uv, float scale, float seed, float t) {
       float rim = smoothstep(radius * 0.5, radius, d);
       float twinkle = 0.55 + 0.45 * sin(t * (0.4 + r.x * 1.3) + r.y * 40.0);
       float hue = hash21(cell + seed * 3.1 + 5.0);
-      vec3 tint = hue < 0.46 ? vec3(0.22, 0.78, 0.90) : hue < 0.8 ? vec3(0.95, 0.60, 0.28) : vec3(0.56, 0.70, 0.92);
+      vec3 tint = hue < 0.46 ? vec3(0.42, 0.74, 0.80) : hue < 0.8 ? vec3(0.82, 0.63, 0.40) : vec3(0.60, 0.70, 0.80);
       col += tint * disc * (0.7 + 0.3 * rim) * twinkle * keep;
     }
   }
@@ -67,28 +67,29 @@ vec3 drops(vec2 uv, float t, float scale, float seed) {
 
 void main() {
   vec2 uv = (gl_FragCoord.xy * 2.0 - uRes) / uRes.y;
-  float t = uTime;
+  // 放慢到原来的四成：雨和灯火只在留神看的时候才觉得在动。
+  float t = uTime * 0.4;
   vec3 near = drops(uv, t, 5.0, 1.0);
   vec3 far = drops(uv * 1.7 + 3.1, t * 1.2, 5.0, 2.0);
   vec2 bend = near.xy + far.xy * 0.6;
-  vec2 p = uv + bend * 0.3 + uPointer * 0.02;
+  vec2 p = uv + bend * 0.3 + uPointer * 0.004;
 
-  // 城市在画面上方三分之一处：页面标题后面是天际线的灯火，往下渐渐暗下去，留给面板。
-  float skyline = p.y - 0.36;
-  vec3 col = mix(vec3(0.012, 0.028, 0.056), vec3(0.020, 0.048, 0.092), smoothstep(-1.0, 0.6, p.y));
-  col += vec3(0.022, 0.105, 0.150) * exp(-pow(skyline * 2.1, 2.0));
-  col += vec3(0.110, 0.055, 0.018) * exp(-pow((skyline + 0.36) * 3.2, 2.0));
+  // 城市压在画面最上面一条：状态条和页面标题后面是远处的灯火，往下很快暗下去，留给面板。
+  float skyline = p.y - 0.60;
+  vec3 col = mix(vec3(0.016, 0.024, 0.031), vec3(0.024, 0.040, 0.052), smoothstep(-1.0, 0.8, p.y));
+  col += vec3(0.020, 0.066, 0.080) * exp(-pow(skyline * 2.6, 2.0));
+  col += vec3(0.050, 0.034, 0.016) * exp(-pow((skyline + 0.30) * 3.6, 2.0));
 
-  // 三层远近不同的灯光，指针移动时近的一层动得更多。
-  float band = exp(-pow((skyline + 0.06) * 1.75, 2.0));
-  vec3 lights = bokeh(p + uPointer * 0.015, 2.6, 1.0, t) * 0.62
-    + bokeh(p + uPointer * 0.04, 4.6, 2.0, t) * 0.44
-    + bokeh(p + uPointer * 0.08, 7.5, 3.0, t) * 0.30;
-  col += lights * (0.04 + 0.96 * band) * 0.5;
+  // 三层远近不同的灯光；指针带来的视差压到几乎察觉不到，免得画面跟着手晃。
+  float band = exp(-pow((skyline + 0.04) * 2.4, 2.0));
+  vec3 lights = bokeh(p + uPointer * 0.003, 2.6, 1.0, t) * 0.62
+    + bokeh(p + uPointer * 0.008, 4.6, 2.0, t) * 0.44
+    + bokeh(p + uPointer * 0.016, 7.5, 3.0, t) * 0.30;
+  col += lights * (0.02 + 0.98 * band) * 0.3;
 
   // 水珠：里面的景物被折射得更亮，边缘带一点高光。
   float wet = near.z + far.z * 0.5;
-  col += vec3(0.38, 0.70, 0.82) * wet * (0.035 + 0.11 * band);
+  col += vec3(0.44, 0.66, 0.72) * wet * (0.02 + 0.07 * band);
   col *= 1.0 - 0.30 * dot(uv * vec2(0.40, 0.55), uv * vec2(0.40, 0.55));
   col += (hash21(gl_FragCoord.xy + fract(t) * 61.0) - 0.5) * 0.008;
   gl_FragColor = vec4(max(col, 0.0), 1.0);

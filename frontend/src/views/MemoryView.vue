@@ -85,7 +85,7 @@ onBeforeUnmount(() => window.clearTimeout(undoTimer))
   <section class="page memory" aria-labelledby="memory-heading">
     <header class="page-head reveal">
       <div>
-        <p class="overline">Station 05 · Memory Racks</p>
+        <p class="overline"><b>05</b>机柜区</p>
         <h1 id="memory-heading" class="page-title">长期记忆</h1>
         <p class="page-sub">像一本有目录的笔记：父块组织主题，子块保存具体内容。</p>
       </div>
@@ -162,7 +162,7 @@ onBeforeUnmount(() => window.clearTimeout(undoTimer))
 </template>
 
 <style scoped>
-.toolbar { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.toolbar { display: flex; align-items: center; gap: 10px 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .search { flex: 1 1 240px; max-width: 380px; }
 .toolbar-count { margin-left: auto; font-size: 12px; color: var(--text-3); white-space: nowrap; }
 .racks { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
@@ -170,23 +170,24 @@ onBeforeUnmount(() => window.clearTimeout(undoTimer))
 .detail-none { display: grid; place-items: center; min-height: 220px; padding: 24px; border-style: dashed; font-size: 13px; text-align: center; color: var(--text-3); }
 .detail-none p { margin: 0; }
 
+/* 维护记录：一条竖线串起来的时间顺序。 */
 .log ol { display: grid; gap: 0; margin: 16px 0 0; padding: 0; list-style: none; }
 .log li { position: relative; padding: 0 0 18px 20px; border-left: 1px solid var(--line-2); }
 .log li:last-child { padding-bottom: 0; }
-.log li::before { content: ''; position: absolute; left: -4px; top: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--bg-2); border: 1.5px solid var(--cyan); }
+.log li::before { content: ''; position: absolute; left: -3px; top: 8px; width: 5px; height: 5px; background: var(--text-3); }
 .log-head { display: flex; align-items: center; gap: 10px; }
 .log-head time { font-size: 12px; color: var(--text-3); }
 .log p { margin: 7px 0 8px; font-size: 13px; line-height: 1.75; color: var(--text-2); }
 .log-blocks { display: flex; gap: 6px; flex-wrap: wrap; }
-.log-block { padding: 2px 8px; border: 1px solid var(--line-2); border-radius: 3px; background: transparent; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); transition: color .16s, border-color .16s; }
+.log-block { padding: 1px 8px; border: 1px solid var(--line-2); border-radius: var(--radius); background: transparent; font-family: var(--font-mono); font-size: 11px; color: var(--text-2); transition: color .14s, border-color .14s; }
 button.log-block:hover { border-color: var(--cyan-line); color: var(--cyan); }
 .log-block.gone { border-style: dashed; font-family: inherit; color: var(--text-3); }
 
-.notes { display: grid; gap: 6px; margin: 26px 0 0; padding: 16px 0 0 18px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--text-3); }
+.notes { display: grid; gap: 6px; margin: 28px 0 0; padding: 16px 0 0 18px; border-top: 1px solid var(--line); font-size: 12px; line-height: 1.8; color: var(--text-3); }
 
-.toast { position: fixed; left: 50%; bottom: 28px; z-index: 60; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 10px 10px 10px 18px; border: 1px solid var(--cyan-line); border-radius: var(--radius-lg); background: rgba(8, 19, 33, .97); box-shadow: var(--shadow-panel), 0 0 30px rgba(73, 221, 235, .14); font-size: 13px; transform: translateX(-50%); }
-.toast-enter-active, .toast-leave-active { transition: opacity .25s ease, transform .25s var(--ease-out); }
-.toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, 12px); }
+.toast { position: fixed; left: 50%; bottom: 28px; z-index: 60; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 32px); padding: 9px 9px 9px 18px; border: 1px solid var(--line-3); border-radius: var(--radius-lg); background: var(--panel-solid); box-shadow: var(--shadow-panel); font-size: 13px; transform: translateX(-50%); }
+.toast-enter-active, .toast-leave-active { transition: opacity .18s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; }
 
 @media (max-width: 1300px) {
   .racks { grid-template-columns: repeat(2, minmax(0, 1fr)); }

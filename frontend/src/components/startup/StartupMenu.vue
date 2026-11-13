@@ -43,30 +43,31 @@ const emit = defineEmits<{
 
 <style scoped>
 .startup-menu { width: 264px; max-width: 100%; pointer-events: auto; }
-.menu-heading { margin: 4px 0 8px; font-size: 11px; letter-spacing: .32em; color: #7d93a8; }
+.menu-heading { margin: 6px 0 8px; font-size: 11px; letter-spacing: .2em; color: #8697a0; }
 ul { margin: 0; padding: 0; list-style: none; }
 .menu-item {
   position: relative; display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 10px 8px 14px;
-  border: 0; border-left: 2px solid rgba(167, 185, 202, .22); background: transparent; color: #a7b9ca;
-  font-size: 15px; letter-spacing: .16em; text-align: left; white-space: nowrap; text-shadow: 0 1px 8px rgba(8, 19, 33, .95);
-  transition: color .18s, background .18s, border-color .18s, padding-left .18s;
+  border: 0; border-left: 1px solid rgba(160, 190, 202, .26); background: transparent; color: #a9b7be;
+  font-size: 14px; letter-spacing: .1em; text-align: left; white-space: nowrap; text-shadow: 0 1px 8px rgba(4, 8, 12, .95);
+  transition: color .14s, background .14s, border-color .14s;
 }
+/* 悬停、聚焦或场景里点中的那一项：左边一道亮线，位置不动。 */
 .menu-item:hover:not(:disabled), .menu-item:focus-visible, .menu-item.active {
-  padding-left: 20px; border-left-color: #49ddeb; color: #edf5fa;
-  background: linear-gradient(90deg, rgba(73, 221, 235, .2), rgba(73, 221, 235, 0));
+  border-left-color: var(--cyan); color: #eef4f6;
+  background: rgba(134, 212, 221, .1); box-shadow: inset 1px 0 0 var(--cyan);
 }
-.menu-mark { font-size: 10px; letter-spacing: .1em; color: #49ddeb; opacity: .85; }
+.menu-mark { font-family: var(--font-num); font-size: 12px; letter-spacing: .06em; color: var(--cyan); }
 .menu-label { flex: 1; }
-.menu-tag { padding: 1px 6px; border: 1px solid rgba(231, 170, 98, .5); border-radius: 2px; font-size: 10px; letter-spacing: .08em; color: #e7aa62; }
-.menu-arrow { opacity: 0; transform: translateX(-6px); transition: opacity .18s, transform .18s; }
-.menu-item:hover:not(:disabled) .menu-arrow, .menu-item:focus-visible .menu-arrow, .menu-item.active .menu-arrow { opacity: 1; transform: none; }
+.menu-tag { padding: 0 5px; border: 1px solid rgba(211, 171, 111, .46); border-radius: var(--radius); font-size: 10px; line-height: 16px; letter-spacing: .06em; color: var(--amber); }
+.menu-arrow { color: var(--cyan); opacity: 0; transition: opacity .14s; }
+.menu-item:hover:not(:disabled) .menu-arrow, .menu-item:focus-visible .menu-arrow, .menu-item.active .menu-arrow { opacity: 1; }
 @media (max-width: 700px) {
   .startup-menu { width: 100%; }
   .menu-heading { display: none; }
   ul { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
   ul::-webkit-scrollbar { display: none; }
-  .menu-item { flex: 0 0 auto; width: auto; padding: 7px 12px; border: 1px solid rgba(167, 185, 202, .3); border-radius: 3px; background: rgba(8, 19, 33, .66); font-size: 13px; letter-spacing: .08em; }
-  .menu-item:hover:not(:disabled), .menu-item:focus-visible, .menu-item.active { padding-left: 12px; border-color: #49ddeb; background: rgba(21, 62, 82, .8); }
+  .menu-item { flex: 0 0 auto; width: auto; padding: 7px 12px; border: 1px solid rgba(160, 190, 202, .3); border-radius: var(--radius); background: rgba(5, 9, 12, .7); font-size: 13px; letter-spacing: .06em; }
+  .menu-item:hover:not(:disabled), .menu-item:focus-visible, .menu-item.active { border-color: var(--cyan); background: rgba(22, 46, 54, .86); box-shadow: none; }
   .menu-label { flex: 0 0 auto; }
   .menu-arrow { display: none; }
 }

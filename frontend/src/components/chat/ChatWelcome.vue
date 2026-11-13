@@ -47,7 +47,7 @@ function pick(event: OddsEvent): void {
   <div class="welcome">
     <div class="welcome-top">
       <div>
-        <p class="overline reveal">Station 01 · Tactical Table</p>
+        <p class="overline reveal"><b>01</b>战术桌</p>
         <h1 class="welcome-title reveal" style="--i: 1">从一场比赛开始。</h1>
         <p class="welcome-sub reveal" style="--i: 2">直接询问已保存的比赛，或去<RouterLink to="/matches" class="link">比赛与盘口</RouterLink>选一场再聊。</p>
       </div>
@@ -90,41 +90,42 @@ function pick(event: OddsEvent): void {
 
 <style scoped>
 .welcome { container-type: inline-size; width: 100%; max-width: 920px; margin: auto; padding: 28px 0 20px; }
-/* 全息球场垫在标题右后方；地方不够宽时不显示。 */
-.welcome-top { position: relative; }
+/* 全息战术板垫在标题右后方；地方不够宽时不显示。 */
+.welcome-top { position: relative; min-height: 150px; }
 .welcome-top > div { position: relative; z-index: 1; }
-.welcome-top .welcome-holo { position: absolute; top: -52px; right: -14px; }
-.welcome-title { margin: 14px 0 0; font-size: clamp(32px, 4vw, 54px); font-weight: 700; letter-spacing: .06em; line-height: 1.15; color: transparent; background: linear-gradient(180deg, #fff 18%, #b9c8f6 100%); -webkit-background-clip: text; background-clip: text; }
+.welcome-top .welcome-holo { position: absolute; top: -58px; right: -18px; }
+.welcome-title { margin: 14px 0 0; font-size: clamp(28px, 3.4vw, 42px); font-weight: 600; letter-spacing: .06em; line-height: 1.2; color: var(--text); }
 .welcome-sub { margin: 14px 0 0; font-size: 15px; color: var(--text-2); }
 
-.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 30px 0 0; padding: 0; border: 1px solid var(--line); border-radius: var(--radius-lg); background: rgba(8, 19, 33, .6); list-style: none; }
-.flow li { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; padding: 14px 18px; border-right: 1px solid var(--line); }
-.flow li:last-child { border-right: 0; }
-.flow span { grid-row: span 2; align-self: center; font-size: 22px; font-style: italic; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--cyan); opacity: .9; }
-.flow strong { font-size: 14px; font-weight: 600; letter-spacing: .06em; }
-.flow small { font-size: 12px; line-height: 1.5; color: var(--text-3); }
+.flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin: 26px 0 0; padding: 0; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line); list-style: none; }
+.flow li { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 2px 14px; padding: 14px 18px 14px 0; }
+.flow li + li { padding-left: 18px; border-left: 1px solid var(--line); }
+.flow span { grid-row: span 2; align-self: start; padding-top: 1px; font-family: var(--font-num); font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .04em; color: var(--cyan); }
+.flow strong { font-size: 14px; font-weight: 600; letter-spacing: .04em; }
+.flow small { font-size: 12px; line-height: 1.6; color: var(--text-3); }
 
-.starts { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+.starts { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 26px; }
 .starts h2 { margin: 0 0 10px; font-weight: 400; }
 .start-item {
-  display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 6px; padding: 11px 12px 11px 14px; border: 1px solid var(--line); border-left: 2px solid rgba(148, 180, 210, .22); border-radius: var(--radius);
-  background: rgba(11, 24, 41, .78); color: var(--text-2); font-size: 13px; line-height: 1.6; text-align: left;
-  transition: color .18s, background .18s, border-color .18s, padding-left .18s;
+  display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 6px; padding: 11px 12px 11px 14px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: rgba(13, 19, 25, .72); color: var(--text-2); font-size: 13px; line-height: 1.6; text-align: left;
+  transition: color .14s, background .14s, border-color .14s;
 }
-.start-item:hover { padding-left: 18px; border-color: var(--line-2); border-left-color: var(--cyan); background: linear-gradient(90deg, rgba(73, 221, 235, .14), rgba(11, 24, 41, .78) 60%); color: var(--text); }
-.start-tag { flex: 0 0 auto; padding: 1px 7px; border: 1px solid var(--cyan-line); border-radius: 2px; font-size: 11px; letter-spacing: .1em; color: var(--cyan); }
+.start-item:hover { border-color: var(--line-3); background: rgba(21, 31, 39, .82); color: var(--text); }
+.start-tag { flex: 0 0 auto; min-width: 46px; font-size: 12px; letter-spacing: .08em; color: var(--cyan); }
 .start-text { flex: 1; min-width: 0; }
-.start-arrow { flex: 0 0 auto; opacity: 0; transform: translateX(-6px); transition: opacity .18s, transform .18s; color: var(--cyan); }
-.start-item:hover .start-arrow { opacity: 1; transform: none; }
-.start-time { display: flex; flex: 0 0 auto; align-items: baseline; gap: 8px; min-width: 88px; font-size: 16px; font-style: italic; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); }
-.start-time small { font-size: 11px; font-style: normal; font-weight: 400; letter-spacing: .1em; color: var(--text-3); }
+.start-arrow { flex: 0 0 auto; color: var(--text-3); transition: color .14s; }
+.start-item:hover .start-arrow { color: var(--cyan); }
+.start-time { display: flex; flex: 0 0 auto; align-items: baseline; gap: 8px; min-width: 88px; font-family: var(--font-num); font-size: 16px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .03em; color: var(--text); }
+.start-time small { font-family: var(--font-sans); font-size: 11px; font-weight: 400; letter-spacing: .06em; color: var(--text-3); }
 .start-teams { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; }
-.start-teams i { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--text-3); }
+.start-teams i { font-family: var(--font-num); font-size: 10px; font-style: normal; font-weight: 500; letter-spacing: .12em; color: var(--text-3); }
 .start-none { padding: 16px; border: 1px dashed var(--line-2); border-radius: var(--radius); font-size: 13px; line-height: 1.8; color: var(--text-2); }
 .start-none p { margin: 0; }
 .start-none-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
 @container (max-width: 780px) {
+  .welcome-top { min-height: 0; }
   .welcome-top .welcome-holo { display: none; }
 }
 @media (max-width: 900px) {
@@ -132,7 +133,7 @@ function pick(event: OddsEvent): void {
 }
 @media (max-width: 700px) {
   .flow { grid-template-columns: 1fr; }
-  .flow li { border-right: 0; border-bottom: 1px solid var(--line); padding: 10px 14px; }
+  .flow li, .flow li + li { padding: 10px 0; border-left: 0; border-bottom: 1px solid var(--line); }
   .flow li:last-child { border-bottom: 0; }
   .start-teams .team-mark { display: none; }
 }

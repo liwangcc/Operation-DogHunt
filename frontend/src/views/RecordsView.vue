@@ -32,7 +32,7 @@ watch(demoEnabled, () => { open.value = false; selected.value = null })
 <template>
   <section class="page records-page">
     <header class="page-head">
-      <div><p class="overline">STATION 02 / PREDICTION JOURNAL</p><h1 class="page-title">预测记录</h1><p class="page-sub">留下当时的判断、盘口与依据，逐条核对赛后结果。</p></div>
+      <div><p class="overline"><b>03</b>二号工位</p><h1 class="page-title">预测记录</h1><p class="page-sub">留下当时的判断、盘口与依据，逐条核对赛后结果。</p></div>
       <div class="page-actions"><RouterLink class="btn" :to="{ path: '/statistics', query }">查看效果统计 ↗</RouterLink><button class="btn btn--primary" :disabled="!rows.length" @click="exportRows">导出筛选结果 CSV</button></div>
     </header>
     <DemoRibbon v-if="demoEnabled" reason="预测记录接口尚未接入；本页与效果统计共用同一套演示记录。" />
@@ -60,12 +60,48 @@ watch(demoEnabled, () => { open.value = false; selected.value = null })
 </template>
 
 <style scoped>
-.record-search { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 18px; }
-.record-search label { display: grid; gap: 7px; }.search { flex: 1; min-width: 180px; }.record-search > span { font-size: 12px; padding-bottom: 6px; }
-.summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 22px; }
-.summary-grid article { min-width: 0; }.summary-grid strong { display: block; font-size: clamp(27px, 3vw, 38px); margin: 8px 0; }.summary-grid small { font-size: 12px; color: var(--text-3); }
-.records-table { overflow: hidden; }.table-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 20px 22px; border-bottom: 1px solid var(--line); }.table-caption > span { font-size: 12px; color: var(--text-3); }
-.table { min-width: 820px; }.table td { padding-block: 16px; }.table tbody tr:hover { background: var(--cyan-soft); }.table td > strong { font-weight: 600; }.record-meta { display: block; margin-top: 5px; color: var(--text-3); font-size: 11px; }.pick { display: block; margin-top: 6px; }.page-note { margin: 18px 0 0; font-size: 12px; line-height: 1.8; color: var(--text-3); }
-@media (max-width: 1000px) { .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .summary-grid { gap: 10px; }.summary-grid article { padding: 16px; }.record-search { padding: 16px; }.record-search > span { width: 100%; }.page-actions { width: 100%; }.page-actions > * { flex: 1; }.summary-grid strong { font-size: 27px; } }
+/* 搜索与结算筛选：和上面的范围筛选一样平铺。 */
+.record-search.panel { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; margin-bottom: 22px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.record-search label { display: grid; gap: 7px; }
+.search { flex: 1; min-width: 180px; max-width: 420px; }
+.record-search > span { margin-left: auto; padding-bottom: 7px; font-size: 12px; }
+
+/* 四个读数排成一条仪表带：一个外框，中间用发丝线隔开。 */
+.summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 22px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(17, 25, 32, .86), rgba(11, 16, 21, .86)); box-shadow: inset 0 1px 0 rgba(200, 232, 238, .045); }
+.summary-grid article.panel { min-width: 0; padding: 18px 22px 16px; border: 0; border-left: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+.summary-grid article.panel:first-child { border-left: 0; }
+.summary-grid strong { display: block; margin: 10px 0 8px; font-size: clamp(26px, 2.6vw, 34px); line-height: 1; }
+.summary-grid small { font-size: 12px; color: var(--text-3); }
+
+.records-table { overflow: hidden; }
+.table-caption { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 16px 22px; border-bottom: 1px solid var(--line); }
+.table-caption > span { font-size: 12px; color: var(--text-3); }
+.table { min-width: 820px; }
+.table th:first-child, .table td:first-child { padding-left: 22px; }
+.table th:last-child, .table td:last-child { padding-right: 22px; }
+.table td { padding-block: 14px; }
+.table tbody tr { transition: background .14s; }
+.table tbody tr:hover { background: rgba(160, 190, 202, .04); }
+.table td > strong { font-weight: 600; }
+/* 每行一个“详情”：平时只是一行字，指到这一行才描出边框，免得右侧竖着一列盒子。 */
+.table td .btn { border-color: transparent; color: var(--text-3); }
+.table tbody tr:hover td .btn, .table td .btn:focus-visible { border-color: var(--line-2); color: var(--text); }
+.record-meta { display: block; margin-top: 4px; font-size: 11px; color: var(--text-3); }
+.pick { display: block; margin-top: 6px; }
+.page-note { margin: 18px 0 0; font-size: 12px; line-height: 1.8; color: var(--text-3); }
+
+@media (max-width: 1000px) {
+  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .summary-grid article.panel:nth-child(odd) { border-left: 0; }
+  .summary-grid article.panel:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 700px) {
+  .summary-grid article.panel { padding: 14px 14px 12px; }
+  .summary-grid strong { font-size: 26px; }
+  .record-search > span { width: 100%; margin-left: 0; padding-bottom: 0; }
+  .search { max-width: none; }
+  .page-actions { width: 100%; }
+  .page-actions > * { flex: 1; }
+  .table th:first-child, .table td:first-child { padding-left: 14px; }
+}
 </style>

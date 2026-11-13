@@ -83,23 +83,23 @@ const rows = computed(() => props.event.bookmakers.map((book) => {
 </template>
 
 <style scoped>
-.drawer-match { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; font-size: 22px; font-weight: 700; letter-spacing: .06em; }
-.drawer-match span { font-size: 12px; font-style: italic; font-weight: 800; letter-spacing: .1em; color: var(--text-3); }
+.drawer-match { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; font-size: 21px; font-weight: 600; letter-spacing: .04em; }
+.drawer-match span { font-family: var(--font-num); font-size: 11px; font-weight: 500; letter-spacing: .14em; color: var(--text-3); }
 .drawer-when { margin: 8px 0 0; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--text-2); }
 .spread-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .spread-grid .label { margin: 0 0 8px; }
 .drawer-note { margin: 10px 0 22px; font-size: 12px; line-height: 1.7; color: var(--text-3); }
 .books th[scope='row'] { padding: 0; font-weight: 400; }
 .books td { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.books td strong { display: block; font-size: 15px; font-style: italic; font-weight: 700; line-height: 1.3; }
-.books td small { font-size: 12px; color: var(--text-2); }
+.books td strong { display: block; font-family: var(--font-num); font-size: 15px; font-weight: 500; letter-spacing: .02em; line-height: 1.3; }
+.books td small { font-family: var(--font-num); font-size: 12px; letter-spacing: .02em; color: var(--text-3); }
 .books .updated { font-size: 12px; color: var(--text-3); }
-.books tbody tr { transition: background .18s; }
-.books tbody tr:hover { background: rgba(73, 221, 235, .05); }
-.books tbody tr.on { background: linear-gradient(90deg, rgba(73, 221, 235, .16), rgba(73, 221, 235, .03)); }
+.books tbody tr { transition: background .14s; }
+.books tbody tr:hover { background: rgba(160, 190, 202, .04); }
+.books tbody tr.on { background: var(--cyan-soft); box-shadow: inset 1px 0 0 var(--cyan); }
 .book-pick { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 52px; padding: 0 12px; border: 0; background: transparent; color: var(--text); font-size: 13px; text-align: left; white-space: nowrap; }
-.book-pick i { width: 10px; height: 10px; border: 1.5px solid var(--line-3); border-radius: 50%; transition: border-color .18s, background .18s, box-shadow .18s; }
-.book-pick[aria-pressed='true'] i { border-color: var(--cyan); background: var(--cyan); box-shadow: 0 0 8px rgba(73, 221, 235, .7); }
+.book-pick i { width: 9px; height: 9px; border: 1px solid var(--line-3); border-radius: 50%; transition: border-color .14s, background .14s; }
+.book-pick[aria-pressed='true'] i { border-color: var(--cyan); background: var(--cyan); }
 .foot-current { margin-right: auto; font-size: 13px; color: var(--text-2); }
 @media (max-width: 560px) {
   .spread-grid { grid-template-columns: 1fr; }

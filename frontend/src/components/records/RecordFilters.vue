@@ -17,8 +17,12 @@ defineEmits<{ reset: [] }>()
 </template>
 
 <style scoped>
-.scope-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; margin-bottom: 18px; }
-label { display: grid; flex: 1 1 130px; gap: 7px; font-size: 11px; letter-spacing: .12em; color: var(--text-3); }
+/* 筛选是操作，不是内容：平铺成一行，下面一条线，不装进面板。 */
+.scope-filters.panel { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; margin-bottom: 18px; padding: 0 0 18px; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+label { display: grid; flex: 1 1 130px; gap: 7px; font-size: 12px; letter-spacing: .08em; color: var(--text-3); }
 select { width: 100%; }
-@media (max-width: 700px) { .scope-filters { padding: 16px; gap: 12px; } label { flex-basis: 120px; min-width: 0; } }
+@media (max-width: 700px) {
+  .scope-filters.panel { gap: 12px; padding-bottom: 16px; }
+  label { flex-basis: 120px; min-width: 0; }
+}
 </style>

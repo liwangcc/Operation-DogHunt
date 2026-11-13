@@ -57,24 +57,26 @@ async function copy(): Promise<void> {
 </template>
 
 <style scoped>
-.turn { display: flex; flex-direction: column; margin-bottom: 26px; animation: turn-in .4s var(--ease-out) both; }
-@keyframes turn-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.turn-author { font-size: 11px; letter-spacing: .2em; color: var(--text-3); }
+.turn { display: flex; flex-direction: column; margin-bottom: 26px; animation: turn-in .22s ease both; }
+@keyframes turn-in { from { opacity: 0; } to { opacity: 1; } }
+.turn-author { font-size: 11px; letter-spacing: .14em; color: var(--text-3); }
 
+/* 用户的问题：靠右的一小块受光面。 */
 .turn.user { align-items: flex-end; }
-.bubble { max-width: min(78%, 640px); margin-top: 6px; padding: 11px 16px; border: 1px solid var(--cyan-line); border-radius: 10px 10px 2px 10px; background: linear-gradient(135deg, rgba(31, 96, 120, .5), rgba(21, 62, 82, .42)); font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble { max-width: min(78%, 640px); margin-top: 6px; padding: 10px 15px; border: 1px solid rgba(134, 212, 221, .24); border-radius: var(--radius-lg); background: rgba(134, 212, 221, .08); font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
 .turn-foot { display: flex; flex-direction: row-reverse; align-items: center; justify-content: flex-start; gap: 8px; max-width: min(78%, 640px); margin-top: 7px; }
-.turn-selection { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 10px 3px 3px; border: 1px solid var(--line-2); border-radius: 3px; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
-.turn-selection span { flex: 0 0 auto; padding: 1px 6px; border-radius: 2px; background: var(--cyan-soft); font-size: 11px; letter-spacing: .14em; color: var(--cyan); }
+.turn-selection { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 2px 10px 2px 3px; border: 1px solid var(--line-2); border-radius: var(--radius); font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
+.turn-selection span { flex: 0 0 auto; padding: 1px 6px; border-radius: 1px; background: var(--cyan-soft); font-size: 11px; letter-spacing: .08em; color: var(--cyan); }
 
-.turn.assistant { padding: 16px 20px 18px; border: 1px solid var(--line); border-left: 2px solid var(--cyan); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(15, 31, 52, .9), rgba(9, 21, 37, .93)); }
-.turn-head { display: flex; align-items: center; gap: 10px; min-height: 30px; margin-bottom: 8px; }
-.turn-badge { width: 16px; height: 6px; background: var(--cyan); transform: skewX(-38deg); }
+/* 助手的回答：一页写好的分析，左侧一道亮线。 */
+.turn.assistant { padding: 16px 22px 20px; border: 1px solid var(--line); border-left: 1px solid var(--cyan-line); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(17, 25, 32, .86), rgba(11, 16, 21, .86)); box-shadow: inset 0 1px 0 rgba(200, 232, 238, .045); }
+.turn-head { display: flex; align-items: center; gap: 10px; min-height: 28px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+.turn-badge { width: 5px; height: 5px; background: var(--cyan); }
 .turn-head .turn-author { color: var(--text); }
 .turn-meta { min-width: 0; overflow: hidden; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
 .turn-head .turn-copy, .turn-head .turn-live { margin-left: auto; }
 .turn-live { color: var(--cyan); }
-.turn-copy { flex: 0 0 auto; opacity: 0; transition: opacity .18s, color .18s, background .18s, border-color .18s; }
+.turn-copy { flex: 0 0 auto; opacity: 0; transition: opacity .14s, color .14s, background .14s, border-color .14s; }
 .turn:hover .turn-copy, .turn-copy:focus-visible { opacity: 1; }
 @media (hover: none) { .turn-copy { opacity: 1; } }
 
@@ -82,27 +84,27 @@ async function copy(): Promise<void> {
 .md { font-size: 14.5px; line-height: 1.85; overflow-wrap: anywhere; }
 .md :deep(p) { margin: 0 0 12px; white-space: pre-wrap; }
 .md > :deep(:last-child) { margin-bottom: 0; }
-.md :deep(h3) { margin: 22px 0 10px; font-size: 16px; font-weight: 600; letter-spacing: .06em; }
-.md :deep(h4) { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; font-size: 14px; font-weight: 600; letter-spacing: .1em; color: var(--text); }
-.md :deep(h4)::before { content: ''; width: 10px; height: 4px; background: var(--cyan); transform: skewX(-38deg); }
+.md :deep(h3) { margin: 22px 0 10px; font-size: 16px; font-weight: 600; letter-spacing: .04em; }
+.md :deep(h4) { display: flex; align-items: center; gap: 10px; margin: 20px 0 10px; font-size: 14px; font-weight: 600; letter-spacing: .06em; color: var(--text); }
+.md :deep(h4)::before { content: ''; width: 2px; height: 12px; background: var(--cyan); }
 .md > :deep(:first-child) { margin-top: 0; }
-.md :deep(strong) { font-weight: 650; color: #fff; }
+.md :deep(strong) { font-weight: 600; color: #f4f8f9; }
 .md :deep(ul), .md :deep(ol) { margin: 0 0 12px; padding-left: 22px; }
 .md :deep(li) { margin: 3px 0; }
 .md :deep(li)::marker { color: var(--cyan); font-variant-numeric: tabular-nums; }
 .md :deep(li > ul), .md :deep(li > ol) { margin: 4px 0; }
 .md :deep(a) { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
-.md :deep(code) { padding: 1px 6px; border: 1px solid var(--line); border-radius: 3px; background: var(--well); font-family: var(--font-mono); font-size: .9em; }
+.md :deep(code) { padding: 1px 6px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); font-family: var(--font-mono); font-size: .9em; }
 .md :deep(pre) { margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--well); overflow-x: auto; }
 .md :deep(pre code) { padding: 0; border: 0; background: none; }
-.md :deep(blockquote) { margin: 0 0 12px; padding: 8px 14px; border-left: 2px solid var(--amber-line); background: rgba(231, 170, 98, .06); color: var(--text-2); }
+.md :deep(blockquote) { margin: 0 0 12px; padding: 8px 14px; border-left: 2px solid var(--amber-line); background: rgba(211, 171, 111, .05); color: var(--text-2); }
 .md :deep(hr) { margin: 18px 0; border: 0; border-top: 1px solid var(--line-2); }
 .md :deep(.md-table) { margin: 0 0 14px; border: 1px solid var(--line); border-radius: var(--radius); overflow-x: auto; }
 .md :deep(table) { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.md :deep(th) { padding: 8px 14px; border-bottom: 1px solid var(--line-2); background: rgba(5, 11, 20, .5); font-size: 11px; font-weight: 500; letter-spacing: .14em; text-align: left; color: var(--text-3); white-space: nowrap; }
+.md :deep(th) { padding: 8px 14px; border-bottom: 1px solid var(--line-2); background: rgba(5, 8, 11, .4); font-size: 12px; font-weight: 400; letter-spacing: .06em; text-align: left; color: var(--text-3); white-space: nowrap; }
 .md :deep(td) { padding: 8px 14px; border-bottom: 1px solid var(--line); }
 .md :deep(tr:last-child td) { border-bottom: 0; }
-.md :deep(.md-num) { font-style: italic; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.md :deep(.md-num) { font-family: var(--font-num); font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: .02em; white-space: nowrap; }
 @media (max-width: 700px) {
   .turn.assistant { padding: 14px 14px 16px; }
   .bubble, .turn-foot { max-width: 90%; }

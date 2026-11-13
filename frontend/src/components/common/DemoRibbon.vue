@@ -17,10 +17,11 @@ defineProps<{
 </template>
 
 <style scoped>
-.demo-ribbon { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding: 8px 10px 8px 0; border: 1px solid var(--amber-line); border-radius: var(--radius); background: linear-gradient(90deg, rgba(231, 170, 98, .16), rgba(231, 170, 98, .05)); overflow: hidden; }
-.ribbon-badge { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; align-self: stretch; margin: -8px 0; padding: 0 14px 0 0; font-size: 12px; font-weight: 600; letter-spacing: .2em; color: var(--amber); white-space: nowrap; }
-.ribbon-stripes { align-self: stretch; width: 30px; background: repeating-linear-gradient(-45deg, var(--amber) 0 6px, transparent 6px 12px); opacity: .85; }
-p { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 1.6; color: #f1cf9f; }
+/* 演示数据提示带：黄铜色加一条斜纹，和真实内容明确分开，但不抢页面主体。 */
+.demo-ribbon { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; padding: 8px 10px 8px 0; border: 1px solid rgba(211, 171, 111, .26); border-radius: var(--radius); background: var(--amber-soft); overflow: hidden; }
+.ribbon-badge { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; align-self: stretch; margin: -8px 0; padding: 0 4px 0 0; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--amber); white-space: nowrap; }
+.ribbon-stripes { align-self: stretch; width: 16px; background: repeating-linear-gradient(-45deg, var(--amber) 0 3px, transparent 3px 7px); opacity: .75; }
+p { flex: 1; min-width: 0; margin: 0; font-size: 13px; line-height: 1.6; color: #dcc9a6; }
 @media (max-width: 700px) {
   .demo-ribbon { flex-wrap: wrap; gap: 8px 12px; padding: 0 10px 10px 0; }
   .ribbon-badge { margin: 0; height: 34px; }

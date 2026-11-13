@@ -181,24 +181,24 @@ onActivated(consumeSampleRequest)
 
 <style scoped>
 /* 聊天页占满状态条以下的整个高度：记录在中间滚动，输入区固定在底部。 */
-.chat { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: calc(100dvh - var(--strip-height)); }
+.chat { display: grid; grid-template-columns: minmax(0, 1fr) 332px; height: calc(100dvh - var(--strip-height)); }
 .chat-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.chat-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 36px; border-bottom: 1px solid var(--line); }
+.chat-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 40px; border-bottom: 1px solid var(--line); }
 .chat-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
-.chat-title { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: .1em; line-height: 1.3; white-space: nowrap; }
+.chat-title { margin: 0; font-size: 16px; font-weight: 600; letter-spacing: .06em; line-height: 1.3; white-space: nowrap; }
 .chat-actions { display: flex; align-items: center; gap: 8px; }
 .context-toggle { display: none; }
 
-.chat-scroll { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 0 36px; overflow-y: auto; }
-.transcript { width: 100%; max-width: 860px; margin: 0 auto; padding: 26px 0 8px; }
-.sample-note { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; padding: 8px 12px; border: 1px solid var(--amber-line); border-radius: var(--radius); background: var(--amber-soft); font-size: 13px; color: #f1cf9f; }
-.sample-note span { flex: 0 0 auto; font-size: 12px; font-weight: 600; letter-spacing: .2em; color: var(--amber); }
+.chat-scroll { display: flex; flex: 1; flex-direction: column; min-height: 0; padding: 0 40px; overflow-y: auto; }
+.transcript { width: 100%; max-width: 860px; margin: 0 auto; padding: 28px 0 8px; }
+.sample-note { display: flex; align-items: center; gap: 12px; margin: 0 0 22px; padding: 8px 12px; border: 1px solid rgba(211, 171, 111, .26); border-radius: var(--radius); background: var(--amber-soft); font-size: 13px; color: #dcc9a6; }
+.sample-note span { flex: 0 0 auto; font-size: 12px; font-weight: 600; letter-spacing: .12em; color: var(--amber); }
 
-.chat-dock { padding: 10px 36px 22px; }
+.chat-dock { padding: 10px 40px 22px; }
 .chat-dock > * { max-width: 860px; margin-left: auto; margin-right: auto; }
 .chat-dock .alert { margin-bottom: 10px; }
 
-.chat-aside { border-left: 1px solid var(--line); background: rgba(5, 11, 20, .58); overflow-y: auto; }
+.chat-aside { border-left: 1px solid var(--line); background: rgba(5, 8, 11, .55); overflow-y: auto; }
 .drawer-context { margin: -22px -26px; }
 
 @media (max-width: 1180px) {

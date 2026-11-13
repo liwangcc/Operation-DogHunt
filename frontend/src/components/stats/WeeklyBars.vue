@@ -28,15 +28,15 @@ const scale = computed(() => Math.max(1, ...props.weeks.map((week) => Math.abs(w
 .week { display: flex; flex: 1 1 0; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
 /* 柱子所在的区域中间有一条零线：盈利的柱子从零线往上长，亏损的往下长。 */
 .week-plot { position: relative; flex: 1; width: 100%; min-height: 120px; background: linear-gradient(var(--line-2), var(--line-2)) center / 100% 1px no-repeat; }
-.week-plot i { position: absolute; left: 18%; right: 18%; min-height: 2px; border-radius: 2px; transition: height .7s var(--ease-out); }
-.week-plot .up { bottom: 50%; background: linear-gradient(180deg, var(--green), rgba(94, 212, 162, .35)); }
-.week-plot .down { top: 50%; background: linear-gradient(0deg, var(--red), rgba(242, 131, 119, .35)); }
-.week-value { font-size: 12px; font-weight: 700; }
-.week-label { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+.week-plot i { position: absolute; left: 22%; right: 22%; min-height: 2px; border-radius: 1px; transition: height .4s var(--ease-out); }
+.week-plot .up { bottom: 50%; background: var(--green); opacity: .82; }
+.week-plot .down { top: 50%; background: var(--red); opacity: .82; }
+.week-value { font-family: var(--font-num); font-size: 12.5px; font-weight: 500; letter-spacing: .02em; }
+.week-label { font-family: var(--font-num); font-size: 11.5px; letter-spacing: .02em; color: var(--text-3); white-space: nowrap; }
 .weekly-none { display: grid; place-items: center; min-height: 190px; margin: 0; font-size: 13px; color: var(--text-3); }
 @media (max-width: 560px) {
   .weekly { gap: 2px; }
-  .week-value { font-size: 10px; letter-spacing: -.02em; }
-  .week-label { font-size: 10px; letter-spacing: -.02em; }
+  .week-value { font-size: 10.5px; letter-spacing: -.01em; }
+  .week-label { font-size: 10.5px; letter-spacing: -.01em; }
 }
 </style>

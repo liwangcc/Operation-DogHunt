@@ -1,54 +1,62 @@
 /* 设计变量与全站基础样式：颜色、字体、间距和元素的默认表现。内页与启动页共用同一套色板。 */
+/* 整体取向：一间安静的暗室，数据是投在上面的冷光。底色接近墨色，强调色是低饱和的全息光，不用外发光和渐变字。 */
 :root {
   color-scheme: dark;
 
-  /* 底色：从最深的窗外夜色到抬起的面板。 */
-  --bg-0: #050b14;
-  --bg-1: #081321;
-  --bg-2: #0b1a2c;
-  --panel: rgba(11, 24, 41, .86);
-  --panel-solid: #0c1a2d;
-  --panel-raised: #10233a;
-  --panel-hover: #142c47;
-  --well: rgba(4, 10, 19, .55);
+  /* 底色：从最深的导航与状态条，到抬起的面板。 */
+  --bg-0: #05080b;
+  --bg-1: #080c10;
+  --bg-2: #0c1217;
+  --panel: rgba(13, 19, 25, .82);
+  --panel-solid: #0d141a;
+  --panel-raised: #121b22;
+  --panel-hover: #17222b;
+  --well: rgba(3, 6, 9, .46);
 
-  /* 线条。 */
-  --line: rgba(148, 180, 210, .13);
-  --line-2: rgba(148, 180, 210, .24);
-  --line-3: rgba(148, 180, 210, .42);
+  /* 线条：发丝粗细，三级亮度。 */
+  --line: rgba(160, 190, 202, .11);
+  --line-2: rgba(160, 190, 202, .2);
+  --line-3: rgba(160, 190, 202, .36);
 
   /* 文字：三级灰度在面板底色上都满足 4.5:1 对比度。 */
-  --text: #e9f1f7;
-  --text-2: #aebfce;
-  --text-3: #8097ab;
+  --text: #e3ebee;
+  --text-2: #a9b7be;
+  --text-3: #7c8c94;
 
-  /* 强调色：青色是主操作与“生效中”，琥珀色是提醒、演示与待办。 */
-  --cyan: #49ddeb;
-  --cyan-soft: rgba(73, 221, 235, .14);
-  --cyan-line: rgba(73, 221, 235, .42);
-  --amber: #e7aa62;
-  --amber-soft: rgba(231, 170, 98, .13);
-  --amber-line: rgba(231, 170, 98, .45);
-  --green: #5ed4a2;
-  --green-soft: rgba(94, 212, 162, .13);
-  --red: #f28377;
-  --red-soft: rgba(242, 131, 119, .13);
-  --violet: #a99df6;
-  --violet-soft: rgba(169, 157, 246, .14);
+  /* 强调色：冷光（变量名沿用 cyan）是主操作、选中与“生效中”；黄铜色（沿用 amber）是提醒、演示与待办。 */
+  --cyan: #86d4dd;
+  --cyan-soft: rgba(134, 212, 221, .09);
+  --cyan-line: rgba(134, 212, 221, .38);
+  --amber: #d3ab6f;
+  --amber-soft: rgba(211, 171, 111, .1);
+  --amber-line: rgba(211, 171, 111, .4);
+  --green: #74c59e;
+  --green-soft: rgba(116, 197, 158, .1);
+  --red: #e18175;
+  --red-soft: rgba(225, 129, 117, .1);
+  --violet: #a7a0de;
+  --violet-soft: rgba(167, 160, 222, .11);
+  /* 落在强调色底上的深色文字。 */
+  --ink: #071013;
 
-  --radius: 4px;
-  --radius-lg: 8px;
-  --shadow-panel: 0 18px 50px rgba(2, 6, 12, .45);
-  --glow-cyan: 0 0 0 3px rgba(73, 221, 235, .08), 0 0 26px rgba(73, 221, 235, .22);
+  --radius: 2px;
+  --radius-lg: 3px;
+  --shadow-panel: 0 20px 48px rgba(0, 0, 0, .5);
+  /* 只给每页的主读数用：很淡的一圈光晕，像投影在空气里的字。 */
+  --bloom: 0 0 22px rgba(134, 212, 221, .26);
+  /* 主投影区的扫描纹，静止不动。 */
+  --scan: repeating-linear-gradient(0deg, rgba(134, 212, 221, .03) 0 1px, transparent 1px 3px);
 
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   --font-mono: ui-monospace, 'Cascadia Mono', 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  /* 读数用的数字字体：仪表上那种等宽、正体的数字；没有这些字体时退回正文字体。 */
+  --font-num: 'Bahnschrift', 'DIN Alternate', 'Roboto Condensed', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
-  --ease-out: cubic-bezier(.16, .84, .3, 1);
+  --ease-out: cubic-bezier(.2, .7, .3, 1);
   --ease-in-out: cubic-bezier(.6, 0, .2, 1);
 
-  --rail-width: 236px;
-  --strip-height: 56px;
+  --rail-width: 228px;
+  --strip-height: 52px;
 
   font-family: var(--font-sans);
   color: var(--text);
@@ -61,22 +69,22 @@
 }
 
 * { box-sizing: border-box; }
-html { scrollbar-color: rgba(148, 180, 210, .3) transparent; scrollbar-width: thin; }
+html { scrollbar-color: rgba(160, 190, 202, .24) transparent; scrollbar-width: thin; }
 body { margin: 0; min-width: 320px; background: var(--bg-1); }
 button, textarea, input, select { font: inherit; color: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; }
-button:disabled { cursor: not-allowed; opacity: .55; }
-:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
-::selection { background: rgba(73, 221, 235, .32); color: #fff; }
-h1 { font-size: clamp(26px, 3vw, 38px); line-height: 1.35; letter-spacing: -1px; font-weight: 600; margin: 0 0 16px; }
+button:disabled { cursor: not-allowed; opacity: .5; }
+:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+::selection { background: rgba(134, 212, 221, .26); color: #fff; }
+h1 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.35; letter-spacing: .02em; font-weight: 600; margin: 0 0 16px; }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: rgba(148, 180, 210, .22); border: 3px solid transparent; border-radius: 6px; background-clip: padding-box; }
-::-webkit-scrollbar-thumb:hover { background: rgba(148, 180, 210, .4); border: 3px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb { background: rgba(160, 190, 202, .18); border: 3px solid transparent; border-radius: 6px; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(160, 190, 202, .34); border: 3px solid transparent; background-clip: padding-box; }
 ::-webkit-scrollbar-track { background: transparent; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-.skip-link { position: fixed; top: -60px; left: 20px; z-index: 100; padding: 10px 16px; border: 1px solid var(--cyan); border-radius: var(--radius); background: var(--bg-0); color: var(--text); }
+.skip-link { position: fixed; top: -60px; left: 20px; z-index: 100; padding: 10px 16px; border: 1px solid var(--cyan-line); border-radius: var(--radius); background: var(--bg-0); color: var(--text); }
 .skip-link:focus { top: 10px; }

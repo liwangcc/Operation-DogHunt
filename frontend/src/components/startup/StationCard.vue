@@ -21,21 +21,22 @@ const emit = defineEmits<{ enter: []; back: [] }>()
 </template>
 
 <style scoped>
+/* 站点说明卡：一块压在场景上的深色面，发丝线描边，不发光。 */
 .station-card {
   width: 340px; max-width: 100%; padding: 20px 22px 18px; pointer-events: auto;
-  border: 1px solid rgba(73, 221, 235, .45); border-radius: 4px; background: rgba(8, 19, 33, .84);
-  box-shadow: 0 0 30px rgba(73, 221, 235, .16), inset 0 0 26px rgba(73, 221, 235, .07); backdrop-filter: blur(8px);
+  border: 1px solid rgba(134, 212, 221, .4); border-radius: var(--radius-lg); background: rgba(6, 10, 14, .86);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(200, 232, 238, .06); backdrop-filter: blur(6px);
 }
-.card-place { margin: 0; font-size: 11px; letter-spacing: .3em; color: #49ddeb; }
-h2 { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; font-size: 24px; font-weight: 600; letter-spacing: .12em; color: #edf5fa; }
-.card-tag { padding: 2px 7px; border: 1px solid rgba(231, 170, 98, .55); border-radius: 2px; font-size: 11px; font-weight: 400; letter-spacing: .08em; color: #e7aa62; }
-.card-summary { margin: 0; font-size: 13px; line-height: 1.8; color: #c9d6e2; }
-.card-note { margin: 8px 0 0; font-size: 12px; line-height: 1.7; color: #8fa3b6; }
-.card-actions { display: flex; gap: 10px; margin-top: 16px; }
-.card-enter { flex: 1; padding: 10px 14px; border: 1.5px solid #49ddeb; border-radius: 3px; background: rgba(21, 62, 82, .7); color: #edf5fa; font-size: 14px; letter-spacing: .14em; transition: background .2s; }
-.card-enter:hover:not(:disabled) { background: rgba(31, 96, 120, .9); }
-.card-back { padding: 10px 16px; border: 1px solid rgba(167, 185, 202, .45); border-radius: 3px; background: transparent; color: #a7b9ca; font-size: 13px; letter-spacing: .14em; transition: color .2s, border-color .2s; }
-.card-back:hover:not(:disabled) { border-color: #a7b9ca; color: #edf5fa; }
+.card-place { margin: 0; font-size: 12px; letter-spacing: .16em; color: var(--cyan); }
+h2 { display: flex; align-items: center; gap: 10px; margin: 8px 0 10px; font-size: 22px; font-weight: 600; letter-spacing: .08em; color: #eef4f6; }
+.card-tag { padding: 1px 6px; border: 1px solid rgba(211, 171, 111, .46); border-radius: var(--radius); font-size: 11px; font-weight: 400; letter-spacing: .06em; color: var(--amber); }
+.card-summary { margin: 0; font-size: 13px; line-height: 1.8; color: #c5d2d8; }
+.card-note { margin: 8px 0 0; font-size: 12px; line-height: 1.7; color: #8d9da5; }
+.card-actions { display: flex; gap: 8px; margin-top: 16px; }
+.card-enter { flex: 1; height: 38px; padding: 0 14px; border: 1px solid var(--cyan-line); border-radius: var(--radius); background: rgba(134, 212, 221, .12); color: #eef6f8; font-size: 13px; letter-spacing: .1em; transition: background .16s, border-color .16s; }
+.card-enter:hover:not(:disabled) { border-color: var(--cyan); background: rgba(134, 212, 221, .2); }
+.card-back { height: 38px; padding: 0 16px; border: 1px solid rgba(160, 190, 202, .36); border-radius: var(--radius); background: transparent; color: #a9b7be; font-size: 13px; letter-spacing: .1em; transition: color .16s, border-color .16s; }
+.card-back:hover:not(:disabled) { border-color: rgba(160, 190, 202, .7); color: #eef4f6; }
 @media (prefers-reduced-motion: reduce) {
   .card-enter, .card-back { transition: none; }
 }

@@ -93,26 +93,26 @@ watch(() => props.child.id, () => {
 
 <style scoped>
 .inspector { padding: 22px 24px 20px; }
-.inspector-title { margin: 12px 0 0; font-size: 22px; font-weight: 700; letter-spacing: .06em; line-height: 1.35; }
+.inspector-title { margin: 12px 0 0; font-size: 21px; font-weight: 600; letter-spacing: .04em; line-height: 1.35; }
 .inspector-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
 .inspector-body { margin: 16px 0 0; font-size: 15px; line-height: 1.85; }
 .editor { margin-top: 16px; }
 .editor textarea { display: block; width: 100%; padding: 12px 14px; border: 1px solid var(--cyan-line); border-radius: var(--radius); outline: 0; resize: vertical; background: var(--well); color: var(--text); font-size: 15px; line-height: 1.8; }
-.editor textarea:focus { box-shadow: 0 0 0 3px rgba(73, 221, 235, .1); }
+.editor textarea:focus { border-color: var(--cyan); }
 .editor-actions { display: flex; gap: 8px; margin-top: 8px; }
 
-.recall { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; padding: 9px 12px; border: 1px solid rgba(94, 212, 162, .3); border-radius: var(--radius); background: var(--green-soft); font-size: 13px; color: #aaead0; }
-.recall i { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 7px rgba(94, 212, 162, .9); }
-.recall.off { border-color: var(--line-2); background: rgba(148, 180, 210, .06); color: var(--text-2); }
-.recall.off i { background: var(--text-3); box-shadow: none; }
+.recall { display: flex; align-items: center; gap: 10px; margin: 16px 0 0; padding: 9px 12px; border: 1px solid rgba(116, 197, 158, .24); border-radius: var(--radius); background: var(--green-soft); font-size: 13px; color: #b3dfc9; }
+.recall i { flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+.recall.off { border-color: var(--line-2); background: rgba(160, 190, 202, .04); color: var(--text-2); }
+.recall.off i { background: var(--text-3); }
 .relation { margin: 10px 0 0; font-size: 13px; color: var(--text-2); }
 .relation-link { padding: 0; border: 0; background: none; font-size: 13px; text-align: left; }
 
 .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px 20px; margin: 20px 0 0; padding-top: 18px; border-top: 1px solid var(--line); }
-.facts dt { font-size: 11px; letter-spacing: .14em; color: var(--text-3); }
+.facts dt { font-size: 12px; letter-spacing: .06em; color: var(--text-3); }
 .facts dd { margin: 3px 0 0; font-size: 14px; }
 .facts dd small { display: block; font-size: 12px; color: var(--text-3); }
 .inspector-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
-.forget { margin-left: auto; border-color: rgba(242, 131, 119, .4); color: var(--red); }
-.forget:hover:not(:disabled) { border-color: var(--red); background: var(--red-soft); color: #f8b8b0; }
+.forget { margin-left: auto; border-color: rgba(225, 129, 117, .36); color: var(--red); }
+.forget:hover:not(:disabled) { border-color: var(--red); background: var(--red-soft); color: #f0b9b1; }
 </style>

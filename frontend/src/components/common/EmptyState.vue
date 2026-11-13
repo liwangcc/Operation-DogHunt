@@ -17,10 +17,10 @@ defineProps<{ title: string; tone?: 'plain' | 'warn' }>()
 </template>
 
 <style scoped>
-.empty { display: flex; flex-direction: column; align-items: center; padding: 48px 24px; border: 1px dashed var(--line-2); border-radius: var(--radius-lg); background: rgba(8, 19, 33, .66); text-align: center; }
-.empty-mark { color: var(--text-3); opacity: .7; }
-.warn .empty-mark { color: var(--amber); }
-h2 { margin: 18px 0 0; font-size: 17px; font-weight: 600; letter-spacing: .08em; }
+.empty { display: flex; flex-direction: column; align-items: center; padding: 52px 24px; border: 1px dashed var(--line-2); border-radius: var(--radius-lg); background: rgba(11, 16, 21, .6); text-align: center; }
+.empty-mark { color: var(--text-3); opacity: .6; }
+.warn .empty-mark { color: var(--amber); opacity: .8; }
+h2 { margin: 18px 0 0; font-size: 16px; font-weight: 600; letter-spacing: .04em; }
 .empty-body { max-width: 56ch; margin-top: 8px; font-size: 13px; line-height: 1.8; color: var(--text-2); }
 .empty-body :deep(p) { margin: 0; }
 .empty-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }

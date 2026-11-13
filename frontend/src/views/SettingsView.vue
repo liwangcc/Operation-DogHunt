@@ -19,7 +19,7 @@ function restore() { resetPreferences(); notice.value = '已恢复默认显示�
 
 <template>
   <section class="page settings-page">
-    <header class="page-head"><div><p class="overline">CONTROL PANEL / WORKSPACE</p><h1 class="page-title">设置</h1><p class="page-sub">检查运行状态，把这台设备上的显示方式调顺手。</p></div><button class="btn" :disabled="refreshing" @click="recheck">{{ refreshing ? '检查中…' : '重新检查全部状态' }}</button></header>
+    <header class="page-head"><div><p class="overline"><b>06</b>控制面板</p><h1 class="page-title">设置</h1><p class="page-sub">检查运行状态，把这台设备上的显示方式调顺手。</p></div><button class="btn" :disabled="refreshing" @click="recheck">{{ refreshing ? '检查中…' : '重新检查全部状态' }}</button></header>
     <section aria-labelledby="runtime-title"><h2 id="runtime-title" class="section-title">运行状态 <small>当前连接与已保存快照</small></h2><div class="status-grid">
       <article class="panel panel-pad"><div class="status-head"><span class="label">后端连接</span><i class="dot" :class="health.status === 'online' ? 'pos' : 'neg'"></i></div><strong>{{ health.status === 'online' ? '已连接' : health.status === 'checking' ? '检查中' : '未连接' }}</strong><p>{{ health.info ? `v${health.info.version} · ${health.latencyMs} ms` : health.message }}</p><button class="btn btn--sm" :disabled="health.status === 'checking'" @click="checkHealth">检查连接</button></article>
       <article class="panel panel-pad"><div class="status-head"><span class="label">模型配置</span><i class="dot" :class="model.status?.configured ? 'pos' : 'text-3'"></i></div><strong>{{ model.status?.model ?? '尚未配置' }}</strong><p>{{ model.error || (model.status?.configured ? '已配置 · 不代表模型在线' : '等待后台配置') }}</p><button class="btn btn--sm" :disabled="model.checking" @click="checkModel">读取配置状态</button></article>
@@ -44,9 +44,48 @@ function restore() { resetPreferences(); notice.value = '已恢复默认显示�
 </template>
 
 <style scoped>
-.status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }.status-grid article { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }.status-head { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }.status-grid strong { margin-top: 18px; font-size: 20px; overflow-wrap: anywhere; }.status-grid p { margin: 8px 0 18px; color: var(--text-3); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }.status-grid button, .status-grid small { margin-top: auto; }.status-grid small { font-size: 11px; color: var(--text-3); }.stale { color: var(--amber); }
-.section-note { margin: 12px 0 22px; font-size: 12px; line-height: 1.8; color: var(--text-3); }.section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }.preferences, .backend-rules { margin-top: 22px; }.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 22px 0; border-top: 1px solid var(--line); }.setting-row > div:first-child { flex: 1; min-width: 0; }.setting-row label { font-size: 14px; font-weight: 600; letter-spacing: .06em; }.setting-row p { margin: 5px 0 0; max-width: 60ch; font-size: 12px; color: var(--text-3); }.setting-row > select, .setting-control { width: 245px; max-width: 100%; flex-shrink: 0; }.setting-control { display: flex; align-items: center; gap: 12px; }.setting-control select { flex: 1; min-width: 0; }.format-example { font-size: 12px; color: var(--cyan); white-space: nowrap; }.preference-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding-top: 16px; border-top: 1px solid var(--line); }.preference-footer span { font-size: 12px; color: var(--green); }
-.backend-rules dl { margin: 22px 0 0; }.backend-rules dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 14px 0; border-top: 1px solid var(--line); font-size: 13px; }.backend-rules dt { color: var(--text-3); }.backend-rules dd { margin: 0; line-height: 1.8; }
-@media (max-width: 1100px) { .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 700px) { .status-grid { gap: 10px; }.status-grid article { padding: 16px 12px; }.status-grid strong { font-size: 17px; }.status-grid .label { font-size: 10px; }.status-grid .btn { white-space: normal; height: auto; min-height: 30px; }.setting-row { flex-direction: column; align-items: stretch; gap: 12px; }.setting-row > select, .setting-control { width: 100%; }.backend-rules dl > div { grid-template-columns: 1fr; gap: 5px; } }
+/* 运行状态：四项读数排成一条仪表带，一个外框，中间用发丝线隔开。 */
+.status-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 16px; border: 1px solid var(--line); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(17, 25, 32, .86), rgba(11, 16, 21, .86)); box-shadow: inset 0 1px 0 rgba(200, 232, 238, .045); }
+.status-grid article.panel { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 18px 22px; border: 0; border-left: 1px solid var(--line); border-radius: 0; background: none; box-shadow: none; }
+.status-grid article.panel:first-child { border-left: 0; }
+.status-head { display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 10px; }
+.status-grid strong { margin-top: 14px; font-size: 19px; font-weight: 600; letter-spacing: .02em; overflow-wrap: anywhere; }
+.status-grid p { margin: 6px 0 16px; font-size: 12px; line-height: 1.8; color: var(--text-3); overflow-wrap: anywhere; }
+.status-grid button, .status-grid small { margin-top: auto; }
+.status-grid small { font-size: 11px; color: var(--text-3); }
+.stale { color: var(--amber); }
+
+.section-note { margin: 12px 0 26px; font-size: 12px; line-height: 1.8; color: var(--text-3); }
+.section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.preferences, .backend-rules { margin-top: 22px; }
+.preferences .section-note { margin-bottom: 18px; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 0; border-top: 1px solid var(--line); }
+.setting-row > div:first-child { flex: 1; min-width: 0; }
+.setting-row label { font-size: 14px; font-weight: 600; letter-spacing: .04em; }
+.setting-row p { max-width: 60ch; margin: 4px 0 0; font-size: 12px; color: var(--text-3); }
+.setting-row > select, .setting-control { width: 245px; max-width: 100%; flex-shrink: 0; }
+.setting-control { display: flex; align-items: center; gap: 12px; }
+.setting-control select { flex: 1; min-width: 0; }
+.format-example { font-family: var(--font-num); font-size: 13px; letter-spacing: .02em; color: var(--cyan); white-space: nowrap; }
+.preference-footer { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding-top: 16px; border-top: 1px solid var(--line); }
+.preference-footer span { font-size: 12px; color: var(--green); }
+
+.backend-rules dl { margin: 18px 0 0; }
+.backend-rules dl > div { display: grid; grid-template-columns: 150px 1fr; gap: 18px; padding: 13px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.backend-rules dt { color: var(--text-3); }
+.backend-rules dd { margin: 0; line-height: 1.8; color: var(--text-2); }
+
+@media (max-width: 1100px) {
+  .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status-grid article.panel:nth-child(odd) { border-left: 0; }
+  .status-grid article.panel:nth-child(n + 3) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 700px) {
+  .status-grid article.panel { padding: 16px 14px; }
+  .status-grid strong { font-size: 17px; }
+  .status-grid .btn { height: auto; min-height: 28px; white-space: normal; }
+  .setting-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .setting-row > select, .setting-control { width: 100%; }
+  .backend-rules dl > div { grid-template-columns: 1fr; gap: 5px; }
+}
 </style>
