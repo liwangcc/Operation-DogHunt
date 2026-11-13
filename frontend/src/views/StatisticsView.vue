@@ -16,9 +16,9 @@ import { demoEnabled, setDemo } from '@/stores/demo'
 const { filters, records, strategies, query, reset } = useRecordScope()
 const summary = computed(() => summarize(records.value))
 const markets = computed(() => (['spreads', 'totals'] as const).map(key => ({ key, label: MARKET_LABEL[key], summary: summarize(records.value.filter(record => record.market === key)) })))
-// 曲线颜色与 tokens.css 里的冷光、紫、黄铜一致。
-const series = computed(() => [{ key: 'all', label: '当前筛选', color: '#86d4dd', points: equityCurve(records.value) },
-  ...(['spreads', 'totals'] as const).filter(key => filters.value.market === 'all' || filters.value.market === key).map(key => ({ key, label: MARKET_LABEL[key], color: key === 'spreads' ? '#a7a0de' : '#d3ab6f', points: equityCurve(records.value.filter(record => record.market === key)) }))])
+// 第一条是当前筛选的整体；没有按玩法筛选时，再把两个玩法各拆成一条，图上各画一张小图。已经只看一个玩法时，拆出来的和整体是同一条线，不重复画。
+const series = computed(() => [{ key: 'all', label: filters.value.market === 'all' ? '合计' : MARKET_LABEL[filters.value.market], points: equityCurve(records.value) },
+  ...(filters.value.market === 'all' ? (['spreads', 'totals'] as const).map(key => ({ key, label: MARKET_LABEL[key], points: equityCurve(records.value.filter(record => record.market === key)) })) : [])])
 const versions = computed(() => groupSummaries(records.value, record => ({ key: record.strategy, label: record.strategy })).sort((a, b) => a.key.localeCompare(b.key)))
 const weeks = computed(() => groupSummaries(records.value, record => {
   const day = new Date(`${beijingDay(record.commenceTime)}T00:00:00Z`)
@@ -45,7 +45,7 @@ const weeks = computed(() => groupSummaries(records.value, record => {
           <article class="panel panel-pad"><span class="label">选择覆盖率</span><strong class="metric-number num-display">{{ percent(summary.coverage) }}</strong><p>{{ summary.picks }} 次选择 / <span data-metric="analyzed">{{ summary.analyzed }}</span> 次分析</p><small>观望 {{ summary.passes }} · 资料不足 {{ summary.insufficient }}</small></article>
         </div>
         <p v-if="summary.wins + summary.losses < 100" class="alert alert--warn sample-note">已分出输赢的样本不足 100 个，比例容易波动；命中率旁的区间显示这种不确定性。</p>
-        <section class="panel panel--ticks panel-pad curve-panel"><div class="section-head"><h2 class="section-title">累计模拟盈亏</h2><span class="tag">每次结算后累计 · 单位</span></div><EquityChart :series="series" /><div class="chart-legend"><span v-for="line in series" :key="line.key"><i :style="{ background: line.color }"></i>{{ line.label }}</span><small>悬停或按左右方向键查看记录</small></div></section>
+        <section class="panel panel--ticks panel-pad curve-panel"><div class="section-head"><h2 class="section-title">累计模拟盈亏</h2><span class="tag">按结算日累计 · 单位</span></div><EquityChart :series="series" /></section>
         <div class="detail-grid"><section class="panel panel-pad"><h2 class="section-title">结算分布</h2><OutcomeBars :rows="markets" :total="summary" /></section><section class="panel panel-pad"><h2 class="section-title">每周表现 <small>周一开始 · 单位</small></h2><div class="weekly-scroll"><WeeklyBars :weeks="weeks" /></div></section></div>
         <section class="panel versions"><div class="section-head"><h2 class="section-title">按策略版本对比</h2><span class="text-3">每个比例都对应自己的样本</span></div><div class="table-wrap"><table class="table"><thead><tr><th>策略版本</th><th>分析数</th><th>已结算投入</th><th>命中率</th><th>模拟净盈亏</th><th>模拟 ROI</th></tr></thead><tbody><tr v-for="version in versions" :key="version.key"><td class="mono">{{ version.label }}</td><td>{{ version.summary.analyzed }}</td><td>{{ version.summary.staked }}</td><td>{{ percent(version.summary.hitRate) }}<small>（{{ version.summary.wins }} 赢 / {{ version.summary.losses }} 输）</small></td><td :class="{ pos: version.summary.net > 0, neg: version.summary.net < 0 }">{{ units(version.summary.net) }}</td><td>{{ signedPercent(version.summary.roi) }}</td></tr></tbody></table></div></section>
         <p class="scope-note">走盘计入已结算投入；取消和待结算不计入收益率分母。观望与资料不足不参与命中率。演示数据由固定种子生成，走势图形仅用于体验界面。</p>
@@ -72,13 +72,9 @@ const weeks = computed(() => groupSummaries(records.value, record => {
 .hit-card > small { grid-area: note; align-self: start; }
 .sample-note { margin-top: 14px; }
 
-/* 累计曲线是这一页的主投影：四角定位标记，底上一层静止的扫描纹。 */
-.curve-panel { margin-top: 22px; background: var(--scan), linear-gradient(180deg, rgba(17, 25, 32, .86), rgba(11, 16, 21, .86)); }
+/* 累计曲线是这一页的主投影：四角定位标记。图面后面不铺扫描纹，细线和刻度要读得清。 */
+.curve-panel { margin-top: 22px; }
 .section-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; margin-bottom: 18px; }
-.chart-legend { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 4px; font-size: 12px; color: var(--text-2); }
-.chart-legend span { display: inline-flex; align-items: center; gap: 7px; }
-.chart-legend i { width: 14px; height: 2px; }
-.chart-legend small { margin-left: auto; color: var(--text-3); }
 
 .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
 .detail-grid > section { min-width: 0; }
@@ -108,8 +104,6 @@ const weeks = computed(() => groupSummaries(records.value, record => {
   .hit-display :deep(.ring) { width: 96px; height: 96px; }
   .hit-display strong { font-size: 20px; }
   .curve-panel { padding: 18px 12px; }
-  .chart-legend { gap: 12px; }
-  .chart-legend small { width: 100%; margin: 0; }
   .section-head .tag { height: auto; white-space: normal; }
 }
 </style>
