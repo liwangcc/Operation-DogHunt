@@ -9,9 +9,10 @@
 | 文件 | 给谁 | 状态 |
 | --- | --- | --- |
 | `shared/rules.md` | 模型：所有功能块共用的规则 | 草稿 |
-| `shared/glossary.md` | 模型：术语与符号约定 | 草稿 |
-| `blocks/strength_v1.md` | 模型：实力块的角色与分析方法 | 草稿，框架样板 |
-| `blocks/strength_v1.schema.json` | 程序：实力块的输入指标与输出格式 | 草稿，指标名暂定 |
+| `shared/glossary.md` | 模型：术语、分数口径（基准与修正）、把握刻度 | 草稿 |
+| `blocks/strength_v2.md` | 模型：实力块的角色与分析方法 | 草稿，框架样板 |
+| `blocks/strength_v2.schema.json` | 程序：实力块的输入指标与输出格式（只输出让分） | 草稿，指标名暂定 |
+| `blocks/strength_v1.md`、`.schema.json` | 旧版，用 `total_* = 0` 占位总分 | 保留不删，不再作为样板 |
 
 ## 拼装顺序
 
@@ -23,6 +24,7 @@
 1. 复制现有块的两份文件，改名为 `{块编号}_v{版本}.md` 和 `{块编号}_v{版本}.schema.json`。
 2. `.md` 第一行写 `# {块编号}_v{版本}`，并保留五个二级标题：角色、输入说明、分析方法、禁止事项、输出要求。
 3. schema 只能有 `id`、`version`、`inputs`、`output_schema` 四个字段；`output_schema` 的 `required` 必须列出全部字段，`additionalProperties` 必须为 `false`。
+   输出字段只能用 `shared/glossary.md` 约定的那些：`reasons`、`missing` 必须有（建议放最前，让模型先写理由）；让分、总分至少输出一种，每种要有方向、把握，分数在基准（`margin_pts` / `total_pts`）和修正（`margin_adj_pts` / `total_adj_pts`）里二选一。块不负责的玩法不写。方向与分数的符号检查、“数据不足”输出由程序按字段名自动处理。
 4. 在 `app/services/analysis/rules.py` 的 `RULES` 里登记这个块的业务规则。
 5. 跑 `backend/tests/test_blocks.py`，文件自检会检查以上各项。
 
