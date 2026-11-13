@@ -2,9 +2,11 @@
 
 import asyncio
 import json
+import re
 import shutil
 import tempfile
 import unittest
+from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
@@ -13,9 +15,10 @@ import httpx
 from app.core.config import Settings, get_settings
 from app.integrations.llm import ModelError, request_model
 from app.main import create_app
-from app.schemas.chat import ChatMessage, ChatResponse
+from app.schemas.chat import ChatMessage, ChatResponse, OddsSelection
 from app.schemas.odds import OddsBoard
 from app.services.chat import prompt as chat_prompt
+from app.services.chat.odds_context import odds_context
 from app.services.odds.board import build_board
 from test_odds import snapshot
 
@@ -259,25 +262,25 @@ class ChatPromptTests(unittest.TestCase):
         self.assertNotIn("<saved_odds_snapshot>", built.text)
 
     def test_edit_without_record_fails(self):
-        path = self.dir / "chat_method_v1.md"
+        path = self.dir / "chat_method_v2.md"
         self.write(path.name, path.read_text(encoding="utf-8") + "新增一句。\n")
         problems = chat_prompt.check(self.dir)
-        self.assertTrue(any("chat_method_v1.md" in p and "chat-prompt-maintenance" in p for p in problems))
+        self.assertTrue(any("chat_method_v2.md" in p and "chat-prompt-maintenance" in p for p in problems))
         self.assertFalse(chat_prompt.build(self.dir).locked)
         with self.assertRaises(chat_prompt.ChatPromptError):
             chat_prompt.update_lock(self.dir)  # 已登记版本不能改写哈希
 
     def test_new_version_must_be_locked_and_logged(self):
-        old = (self.dir / "chat_method_v1.md").read_text(encoding="utf-8")
-        self.write("chat_method_v2.md", old.replace("# chat_method_v1", "# chat_method_v2") + "新增一句。\n")
-        self.assertTrue(any("chat_method_v2.md" in p and "未登记" in p for p in chat_prompt.check(self.dir)))
-        active = ["chat_role_v1", "chat_sources_v1", "chat_odds_v1", "chat_method_v2", "chat_output_v1"]
+        old = (self.dir / "chat_method_v2.md").read_text(encoding="utf-8")
+        self.write("chat_method_v3.md", old.replace("# chat_method_v2", "# chat_method_v3") + "新增一句。\n")
+        self.assertTrue(any("chat_method_v3.md" in p and "未登记" in p for p in chat_prompt.check(self.dir)))
+        active = ["chat_role_v1", "chat_sources_v1", "chat_odds_v1", "chat_method_v3", "chat_output_v1"]
         chat_prompt.update_lock(self.dir, active)
-        self.assertEqual(chat_prompt.check(self.dir), ["chat_method_v2：CHANGELOG.md 里没有 `### chat_method_v2` 条目"])
+        self.assertEqual(chat_prompt.check(self.dir), ["chat_method_v3：CHANGELOG.md 里没有 `### chat_method_v3` 条目"])
         with (self.dir / "CHANGELOG.md").open("a", encoding="utf-8") as f:
-            f.write("\n### chat_method_v2（替换 chat_method_v1）\n- 测试\n")
+            f.write("\n### chat_method_v3（替换 chat_method_v2）\n- 测试\n")
         self.assertEqual(chat_prompt.check(self.dir), [])
-        self.assertEqual(chat_prompt.build(self.dir).versions[3], "chat_method_v2")
+        self.assertEqual(chat_prompt.build(self.dir).versions[3], "chat_method_v3")
 
     def test_header_order_and_deleted_old_version(self):
         path = self.dir / "chat_role_v1.md"
@@ -296,6 +299,26 @@ class ChatPromptTests(unittest.TestCase):
         self.assertTrue(chat_prompt.check(self.dir)[0].startswith("缺少 versions.lock.json"))
         with self.assertRaises(chat_prompt.ChatPromptError):
             chat_prompt.build(self.dir)
+
+
+class EvalSnapshotTests(unittest.TestCase):
+    """回归用例引用的固定快照能被程序读取，并且在快照约定的时刻有效。"""
+
+    def test_cases_reference_usable_snapshots(self):
+        cases = (chat_prompt.CHAT_DIR / "eval_cases.md").read_text(encoding="utf-8")
+        ids = set(re.findall(r"^- 快照：(S-\d{3})$", cases, re.M))
+        self.assertTrue(ids)
+        for snapshot_id in sorted(ids):
+            with self.subTest(snapshot_id):
+                path = chat_prompt.CHAT_DIR / "eval_snapshots" / f"{snapshot_id}.json"
+                snap = json.loads(path.read_text(encoding="utf-8"))
+                now = datetime.fromisoformat(snap["_eval"]["now"].replace("Z", "+00:00"))
+                board = build_board(snap, now)
+                self.assertFalse(board.stale)
+                selection = OddsSelection(**snap["_eval"]["selection"])
+                context = json.loads(odds_context(board, selection))
+                self.assertEqual([e["id"] for e in context["events"]], [selection.event_id])
+                self.assertNotIn("_eval", context)
 
 
 if __name__ == "__main__":
