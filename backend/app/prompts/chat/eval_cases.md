@@ -11,6 +11,8 @@
 
 快照一经用例引用就不再修改；需要不同盘面时新增 S-002。`tests/test_chat.py` 的 `EvalSnapshotTests` 检查用例引用的快照存在、在 `now` 时刻不过期、选场能找到。
 
+赛程比分和伤病放在 `D-` 文件（例如 `D-001.json`），`schedule` 和 `injuries` 两个字段的格式分别和 `data/schedule/*/schedule.json`、`data/injuries/*/injuries.json` 相同，`_eval.for` 写配合的盘口快照。`D-001` 是合成数据，配合 S-001：掘金 9 场场均净胜 +6.0、场均总分 232，湖人 10 场场均净胜 -1.0、场均总分 236；湖人 11-12 刚打完（背靠背），掘金 11-10 后休 2 天；伤病里湖人头号得分手 Lakers Guard A 在湖人最后一场之后报告缺阵，Lakers Center B 本季一直缺阵，掘金替补 Nuggets Wing C 出场待定。D 文件同样一经引用不再修改，`EvalSnapshotTests` 检查这些数字。
+
 试跑时在 `backend/` 下用临时脚本替换读盘口和取时间，再调用 `service.chat`，其余代码和网站接口相同：
 
 ```python
@@ -33,7 +35,8 @@ class FixedClock(datetime):
 service.read_board = lambda: build_board(snap, now)
 service.datetime = FixedClock
 service.load_history = lambda: []      # 不读本机真实的历史快照
-service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成该用例给出的固定赛程
+service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成该用例给出的固定赛程，E-010、E-011 换成 D-001 的 schedule
+service.load_injuries = lambda: None   # 不读本机真实伤病；E-010、E-011 换成 D-001 的 injuries
 # 之后 await service.chat(ChatRequest(...), get_settings())；选场用例的 odds_selection 取 snap["_eval"]["selection"]
 ```
 
@@ -66,7 +69,7 @@ service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成
 - 快照：S-001
 - 前置：选定一场
 - 问题：某某球员今天打不打（换成该场任一球员）
-- 期望：说明没有伤病资料，不凭记忆给出出场状态
+- 期望：说明没有伤病资料，不凭记忆给出出场状态（`load_injuries` 返回 None；有伤病资料时见 E-011）
 - 来源：首版
 
 ## E-004｜output、sources
@@ -116,3 +119,17 @@ service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成
 - 问题：帮我预测一下这场
 - 期望：让分节的因素表里有报价差、休息差两行（数据照 market_signals 和 schedule_rest），伤病一行写“缺失”；“预计怎么来的”写出共识线、向哪边调几分、调整对应哪几行，范围中点和倾向一致；伤病未知时两个玩法都不能是“高”；让分倾向掘金且没有同等分量的反向因素时把握为“中”，说明命中“休息差”，并写出补伤病资料后可能的变化；大小分只用报价差时把握为“低”，不把休息差直接算进大小分，除非写明理由
 - 来源：I-004（把握没有原因、预计没有推导；休息差的档位有歧义）
+
+## E-010｜核心｜odds、method、output、sources
+- 快照：S-001；赛程比分和伤病用 D-001，试跑时 `service.load_schedule = lambda: D["schedule"]`、`service.load_injuries = lambda: D["injuries"]`
+- 前置：选定湖人 @ 掘金、DraftKings（S-001 的 selection）
+- 问题：分析这场
+- 期望：战绩一行写出掘金 +6.0（9 场）、湖人 -1.0（10 场），推算掘金赢约 9，和共识 6.75 差约 2，写成与市场一致、不作为选边理由；伤病一行写 Lakers Guard A 缺阵（新伤病，指向掘金），注明 ESPN、采集时间和可能滞后，Lakers Center B 写成本季一直缺阵、已在战绩里、不重复计算，Nuggets Wing C 只算出场待定；让分倾向掘金，把握“中”，说明新伤病和休息差盘口通常已计入，所以不是“高”；大小分推算总分约 234、与共识 231 差 3 分，写成一致，把握“低”，如果用伤病解释大小分要写明理由；资料列写出 BALLDONTLIE、ESPN、DraftKings 等具体来源，不只写字母；不凭记忆评价这几名虚构球员
+- 来源：I-005（接入近期战绩和伤病后，依据要有数字和来源）
+
+## E-011｜odds、sources
+- 快照：S-001；D-001 同 E-010
+- 前置：选定湖人 @ 掘金、DraftKings
+- 问题：Lakers Guard A 今天打不打？掘金那边有人缺阵吗
+- 期望：Guard A 按 ESPN 写“缺阵”，附报告时间和 ESPN 采集时间（北京时间），说明非官方、可能滞后，建议开赛前看球队官方报告；掘金写 Nuggets Wing C 出场待定，不说成缺阵；不加入 D-001 里没有的球员
+- 来源：I-005

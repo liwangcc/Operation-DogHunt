@@ -1,4 +1,4 @@
-"""赛程快照：更新盘口时顺带从 BALLDONTLIE 取一次近几天赛程，聊天时据此算休息天数和背靠背。
+"""赛程快照：更新盘口后在后台从 BALLDONTLIE 取一次近 30 天赛程与比分，聊天时据此算休息天数、背靠背和近期战绩（team_form）。
 
 聊天只读本地文件，不访问外部服务。日期一律用美国东部日期，和 NBA 官方赛程日期一致。
 """
@@ -19,6 +19,8 @@ SCHEDULE_ROOT = PROJECT_ROOT / "data" / "schedule"
 EASTERN = timezone(timedelta(hours=-5))
 # 往前看几天：上一场在这几天之外时记为“至少休 5 天”。
 LOOKBACK_DAYS = 5
+# 近期战绩取更新当天往前几天的已结束比赛；30 天约 14 场，够算近 10 场，翻页约 3 页。
+FORM_DAYS = 30
 
 # BALLDONTLIE 缩写 → The Odds API 全名（快船在两边写法不同，不按全名直接比）。
 TEAM_BY_ABBR = {
@@ -43,8 +45,16 @@ def _team(raw: object) -> str | None:
     return TEAM_BY_ABBR.get(str(raw.get("abbreviation", "")).upper())
 
 
+def _final_scores(raw: dict) -> tuple[int, int] | None:
+    finished = raw.get("status_state") == "final" if "status_state" in raw else raw.get("status") == "Final"
+    home, away = raw.get("home_team_score"), raw.get("visitor_team_score")
+    if finished and type(home) is int and type(away) is int and home + away > 0:
+        return home, away
+    return None
+
+
 def normalize_games(raw_games: list[dict]) -> list[dict]:
-    """只留下双方都能对上 30 队、日期有效、没有延期的比赛。"""
+    """只留下双方都能对上 30 队、日期有效、没有延期的比赛；已结束的比赛带比分。"""
     games = []
     for raw in raw_games:
         if not isinstance(raw, dict) or raw.get("postponed"):
@@ -55,18 +65,23 @@ def normalize_games(raw_games: list[dict]) -> list[dict]:
         except ValueError:
             continue
         if home and away:
-            games.append({"id": raw.get("id"), "date": day.isoformat(), "home": home, "away": away, "status": raw.get("status")})
+            game = {"id": raw.get("id"), "date": day.isoformat(), "home": home, "away": away, "status": raw.get("status")}
+            if scores := _final_scores(raw):
+                game["home_score"], game["away_score"] = scores
+            games.append(game)
     games.sort(key=lambda game: (game["date"], game["home"]))
     return games
 
 
-def needed_dates(events: list[OddsEvent]) -> list[str]:
-    """每场比赛的东部日期及之前 LOOKBACK_DAYS 天。"""
+def needed_dates(events: list[OddsEvent], today: date) -> list[str]:
+    """每场比赛的东部日期及之前 LOOKBACK_DAYS 天，加上 today（东部日期）及之前 FORM_DAYS 天。"""
     days = {us_date(event.commence_time) for event in events}
-    return sorted({(day - timedelta(days=back)).isoformat() for day in days for back in range(LOOKBACK_DAYS + 1)})
+    rest = {(day - timedelta(days=back)).isoformat() for day in days for back in range(LOOKBACK_DAYS + 1)}
+    form = {(today - timedelta(days=back)).isoformat() for back in range(FORM_DAYS + 1)}
+    return sorted(rest | form)
 
 
-def refresh_schedule(events: list[OddsEvent], root: Path | None = None) -> str:
+def refresh_schedule(events: list[OddsEvent], root: Path | None = None, today: date | None = None) -> str:
     """取数失败不影响盘口更新；返回一句结果给日志。没配置 Key 时不请求。"""
     if not events:
         return "没有已开盘比赛，跳过赛程"
@@ -74,16 +89,18 @@ def refresh_schedule(events: list[OddsEvent], root: Path | None = None) -> str:
         key = balldontlie.load_key()
         if key is None:
             return f"未配置 {balldontlie.KEY_NAME}，跳过赛程"
-        dates = needed_dates(events)
+        today = today or datetime.now(EASTERN).date()
+        dates = needed_dates(events, today)
         games = normalize_games(balldontlie.fetch_games(key, dates))
         fetched = datetime.now(timezone.utc)
         folder = (root or SCHEDULE_ROOT) / (fetched.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:8])
         folder.mkdir(parents=True, exist_ok=False)
         record = {"provider": "BALLDONTLIE", "fetched_at": fetched.isoformat(timespec="seconds").replace("+00:00", "Z"),
-                  "dates": dates, "games": games}
+                  "dates": dates, "form_from": (today - timedelta(days=FORM_DAYS)).isoformat(), "games": games}
         with (folder / "schedule.json").open("x", encoding="utf-8") as output:
             json.dump(record, output, ensure_ascii=False, indent=2)
-        return f"赛程已保存 {len(games)} 场（{len(dates)} 个日期，{dates[0]} 至 {dates[-1]}）"
+        finals = sum("home_score" in game for game in games)
+        return f"赛程已保存 {len(games)} 场，其中 {finals} 场有比分（{len(dates)} 个日期，{dates[0]} 至 {dates[-1]}）"
     except balldontlie.ScheduleError as error:
         return f"赛程未更新：{error}"
     except (OSError, ValueError, TypeError, KeyError, AttributeError):

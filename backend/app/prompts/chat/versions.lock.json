@@ -1,10 +1,10 @@
 {
   "active": [
     "chat_role_v1",
-    "chat_sources_v2",
-    "chat_odds_v3",
-    "chat_method_v4",
-    "chat_output_v3"
+    "chat_sources_v3",
+    "chat_odds_v4",
+    "chat_method_v5",
+    "chat_output_v4"
   ],
   "files": {
     "chat_method_v1": {
@@ -23,6 +23,10 @@
       "sha256": "aef0bd66aa59e44a28d16d73ca643c7eab6109d02c81edaba7eb2c64168dcb6f",
       "chars": 853
     },
+    "chat_method_v5": {
+      "sha256": "46b38c0f145bbd842131ba13430ec7c071098a0452b635fe2f2713915903eb48",
+      "chars": 1379
+    },
     "chat_odds_v1": {
       "sha256": "f6bb72223b93d16fe2c42160c94cc296e9a6920a049517d1c3988f4edcddc363",
       "chars": 497
@@ -34,6 +38,10 @@
     "chat_odds_v3": {
       "sha256": "77906e5427697e869ba101e92803c29cf14eb28276241a0fd22923011f6a6985",
       "chars": 1344
+    },
+    "chat_odds_v4": {
+      "sha256": "a8042f7a9212c1c45b2c0386131b1732f60b1b5148271f394755c1508a26e05c",
+      "chars": 2280
     },
     "chat_output_v1": {
       "sha256": "01a277d874cc285fa2e002ffaec13fbd961e03920983738842b0923e3f82958f",
@@ -47,6 +55,10 @@
       "sha256": "e25cfb958a809890f797d6072b61bc912936fb437c14fa9cdd550c3ccd391eff",
       "chars": 1552
     },
+    "chat_output_v4": {
+      "sha256": "471cd44e7fce7ac1bb0e2e11d8af142d51d101092f1e279e0286b580772dd889",
+      "chars": 1963
+    },
     "chat_role_v1": {
       "sha256": "c65aab4c4950e9a5a65af469c519d43dfc1e3e4fe2d65bb953fbdd4b7e676ec6",
       "chars": 246
@@ -58,8 +70,12 @@
     "chat_sources_v2": {
       "sha256": "df782a1df729a185415d93fa8cf106f8dad71e91770377dcf2d3e2bc3830a075",
       "chars": 466
+    },
+    "chat_sources_v3": {
+      "sha256": "3578b0425cfdc6a1b2b93dc003595dfe2f29f3b8fa7f1df81d46ea966b62c09f",
+      "chars": 679
     }
   },
-  "static_sha256": "b84eb3eb3d252e53d5116a6be9d95b4dfaaf214d8191b228292006f9ab29b91d",
-  "static_chars": 4465
+  "static_sha256": "558bb11e5242473bd1fa9e79e31f7393b3693015cc59b957861c81d55973fb61",
+  "static_chars": 6551
 }

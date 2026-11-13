@@ -10,6 +10,7 @@ from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.chat.odds_context import odds_context
 from app.services.chat.prompt import ChatPromptError, static_prompt
 from app.services.odds.board import read_board
+from app.services.odds.injuries import load_injuries
 from app.services.odds.schedule import load_schedule
 from app.services.odds.signals import load_history
 
@@ -23,7 +24,8 @@ async def build_instructions(request: ChatRequest) -> str:
     board = await asyncio.to_thread(read_board)
     history = await asyncio.to_thread(load_history) if board.status == "available" else None
     schedule = await asyncio.to_thread(load_schedule) if board.status == "available" else None
-    context = odds_context(board, request.odds_selection, request.messages, history, schedule)
+    injuries = await asyncio.to_thread(load_injuries) if board.status == "available" else None
+    context = odds_context(board, request.odds_selection, request.messages, history, schedule, injuries)
     # 北京时间没有夏令时，用固定 UTC+8；Windows 默认没有 tzdata，ZoneInfo("Asia/Shanghai") 会报错
     now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
     try:

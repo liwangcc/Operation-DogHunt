@@ -6,10 +6,12 @@ import re
 from app.integrations.llm import ModelError
 from app.schemas.chat import ChatMessage, OddsSelection
 from app.schemas.odds import OddsBoard
+from app.services.odds.injuries import injury_context
 from app.services.odds.schedule import rest_context
 from app.services.odds.signals import Lines, market_signals
+from app.services.odds.team_form import form_context
 
-# 只有聚焦到少数比赛时才附带市场信号；列整张表时不需要，也避免输入过长。
+# 只有聚焦到少数比赛时才附带市场信号、赛程、战绩和伤病；列整张表时不需要，也避免输入过长。
 SIGNAL_EVENT_LIMIT = 3
 
 # 球队全名（与 The Odds API 一致）→ 用户常用叫法。英文按整词匹配，中文按包含匹配。
@@ -68,8 +70,9 @@ def focus_teams(messages: list[ChatMessage]) -> set[str]:
 
 
 def odds_context(board: OddsBoard, selection: OddsSelection | None, messages: list[ChatMessage] | None = None,
-                 history: list[tuple[str, Lines]] | None = None, schedule: dict | None = None) -> str:
-    """schedule 是 load_schedule 的结果，None 表示没有可用赛程。"""
+                 history: list[tuple[str, Lines]] | None = None, schedule: dict | None = None,
+                 injuries: dict | None = None) -> str:
+    """schedule、injuries 是 load_schedule、load_injuries 的结果，None 表示没有可用资料。"""
     events = board.events
     focus = None
     if not selection and messages and (teams := focus_teams(messages)):
@@ -86,11 +89,10 @@ def odds_context(board: OddsBoard, selection: OddsSelection | None, messages: li
             raise ModelError("所选平台在最新保存的数据中已无报价，请到比赛与盘口重新选择平台。", 409)
         signals = market_signals(board, [event], selection.bookmaker_key, history) if history is not None else None
         events = [event.model_copy(update={"bookmakers": [book]})]
-        rest = rest_context(schedule, events)
+        few = True
     else:
         few = 0 < len(events) <= SIGNAL_EVENT_LIMIT
         signals = market_signals(board, events, None, history) if history is not None and few else None
-        rest = rest_context(schedule, events) if few else None
 
     payload = {
         "status": board.status,
@@ -102,6 +104,8 @@ def odds_context(board: OddsBoard, selection: OddsSelection | None, messages: li
         "focus": focus,
         "events": [event.model_dump() for event in events],
         "market_signals": signals,
-        "schedule_rest": rest,
+        "schedule_rest": rest_context(schedule, events) if few else None,
+        "team_form": form_context(schedule, events) if few else None,
+        "injuries": injury_context(injuries, events) if few else None,
     }
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
