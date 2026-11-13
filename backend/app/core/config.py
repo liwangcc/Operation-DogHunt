@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     model_base_url: str = ""
     model_api_key: SecretStr = SecretStr("")
     model_name: str = ""
+    model_reasoning_effort: Literal["none", "minimal", "low", "medium", "high", "xhigh"] = "high"
     model_extra_headers: SecretStr = SecretStr("{}")
     model_timeout_seconds: int = Field(default=120, ge=5, le=300)
     model_max_output_tokens: int = Field(default=4096, ge=128, le=16384)

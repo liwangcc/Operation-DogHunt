@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // NBA 助手：聊天记录、发送与等待、新对话；右侧是这次提问会读到的资料。对话只保存在本次打开的网站里。
 import { computed, nextTick, onActivated, onMounted, ref, watch } from 'vue'
-import { sendChat } from '@/api/chat'
+import { streamChat } from '@/api/chat'
 import ChatComposer from '@/components/chat/ChatComposer.vue'
 import ChatContext from '@/components/chat/ChatContext.vue'
 import ChatTurn from '@/components/chat/ChatTurn.vue'
@@ -22,6 +22,8 @@ const error = ref('')
 /** 正在等待回答的那个问题，以及发出的时刻。 */
 const pending = ref<Turn | null>(null)
 const startedAt = ref(0)
+/** 正在逐段收到的回答；完整完成前不进入聊天记录，失败时丢弃。 */
+const partial = ref('')
 /** 当前显示的是示例对话（没有调用模型），不能接着提问。 */
 const sample = ref(false)
 const contextOpen = ref(false)
@@ -55,6 +57,14 @@ async function scrollToEnd(): Promise<void> {
   scroller.value?.scrollTo({ top: scroller.value.scrollHeight, behavior: 'smooth' })
 }
 
+/** 逐段显示时，只有用户本来就停在底部附近才跟着滚动，避免打断往上翻看。 */
+async function followEnd(): Promise<void> {
+  const box = scroller.value
+  if (!box || box.scrollHeight - box.scrollTop - box.clientHeight > 160) return
+  await nextTick()
+  box.scrollTop = box.scrollHeight
+}
+
 async function send(): Promise<void> {
   const question = input.value.trim()
   if (!question || loading.value || !ready.value || !model.status) return
@@ -64,22 +74,29 @@ async function send(): Promise<void> {
   }
   const selection = oddsSelection.value
   const userTurn: Turn = { role: 'user', content: selection ? `${question}${SELECTION_MARK}${selection.label}` : question }
+  // 发出去就清空输入框；请求失败时再把问题放回来。
+  input.value = ''
   loading.value = true
   error.value = ''
   pending.value = userTurn
   startedAt.value = Date.now()
+  partial.value = ''
   await scrollToEnd()
   try {
     const history = [...turns.value, userTurn].map(({ role, content }) => ({ role, content }))
-    const result = await sendChat(history, model.status.timeout_seconds, selection ? { event_id: selection.event_id, bookmaker_key: selection.bookmaker_key } : null)
+    const result = await streamChat(history, model.status.timeout_seconds, selection ? { event_id: selection.event_id, bookmaker_key: selection.bookmaker_key } : null, (text) => {
+      partial.value += text
+      void followEnd()
+    })
     turns.value.push(userTurn, { role: 'assistant', content: result.reply, meta: { model: result.model, seconds: (Date.now() - startedAt.value) / 1000, usage: result.usage ?? null } })
-    input.value = ''
   } catch (cause) {
-    // 失败时保留输入，由用户决定是否重发；不自动重试。
+    // 失败时把问题放回输入框，由用户决定是否重发；不自动重试。
+    if (!input.value) input.value = question
     error.value = cause instanceof Error ? cause.message : '发送失败，请手动重试。'
   } finally {
     loading.value = false
     pending.value = null
+    partial.value = ''
     await scrollToEnd()
   }
 }
@@ -140,7 +157,8 @@ onActivated(consumeSampleRequest)
           <ChatTurn v-for="(turn, index) in turns" :key="index" :turn="turn" />
           <template v-if="loading && pending">
             <ChatTurn :turn="pending" />
-            <ChatWaiting :elapsed-ms="Math.max(0, now - startedAt)" :timeout-seconds="model.status?.timeout_seconds ?? 0" />
+            <ChatTurn v-if="partial" :turn="{ role: 'assistant', content: partial }" streaming />
+            <ChatWaiting v-else :elapsed-ms="Math.max(0, now - startedAt)" :timeout-seconds="model.status?.timeout_seconds ?? 0" />
           </template>
         </div>
       </div>

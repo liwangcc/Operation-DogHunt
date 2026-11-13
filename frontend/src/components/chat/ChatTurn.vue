@@ -1,10 +1,10 @@
 <script setup lang="ts">
-// 聊天记录里的一条发言：用户的问题靠右，助手的回答按 Markdown 排版并附带模型、耗时和用量。
+// 聊天记录里的一条发言：用户的问题靠右，助手的回答按 Markdown 排版并附带模型、耗时和用量；两边都能一键复制。
 import { computed, h, ref, type FunctionalComponent } from 'vue'
 import { blocks } from './markdown'
 import { SELECTION_MARK, type Turn } from './types'
 
-const props = defineProps<{ turn: Turn }>()
+const props = defineProps<{ turn: Turn; /** 回答还在逐段生成，不能复制。 */ streaming?: boolean }>()
 
 const parts = computed(() => {
   const split = props.turn.role === 'user' ? props.turn.content.indexOf(SELECTION_MARK) : -1
@@ -16,9 +16,10 @@ Markdown.props = ['text']
 
 const copied = ref(false)
 let copyTimer = 0
+// 用户发言只复制自己写的问题，不带选场标签；助手回答复制完整 Markdown 原文。
 async function copy(): Promise<void> {
   try {
-    await navigator.clipboard.writeText(props.turn.content)
+    await navigator.clipboard.writeText(props.turn.role === 'user' ? parts.value.text : props.turn.content)
     copied.value = true
     window.clearTimeout(copyTimer)
     copyTimer = window.setTimeout(() => {
@@ -35,7 +36,10 @@ async function copy(): Promise<void> {
     <template v-if="turn.role === 'user'">
       <span class="turn-author">你</span>
       <div class="bubble">{{ parts.text }}</div>
-      <span v-if="parts.selection" class="turn-selection"><span>选场</span>{{ parts.selection }}</span>
+      <div class="turn-foot">
+        <span v-if="parts.selection" class="turn-selection"><span>选场</span>{{ parts.selection }}</span>
+        <button type="button" class="btn btn--sm btn--quiet turn-copy" @click="copy">{{ copied ? '已复制' : '复制' }}</button>
+      </div>
     </template>
     <template v-else>
       <header class="turn-head">
@@ -44,7 +48,8 @@ async function copy(): Promise<void> {
         <span v-if="turn.meta" class="turn-meta">
           {{ turn.meta.model }} · {{ turn.meta.seconds.toFixed(1) }} 秒<template v-if="turn.meta.usage"> · 输入 {{ turn.meta.usage.input_tokens }} / 输出 {{ turn.meta.usage.output_tokens }} tokens</template>
         </span>
-        <button type="button" class="btn btn--sm btn--quiet turn-copy" @click="copy">{{ copied ? '已复制' : '复制' }}</button>
+        <span v-if="streaming" class="turn-meta turn-live">生成中…</span>
+        <button v-else type="button" class="btn btn--sm btn--quiet turn-copy" @click="copy">{{ copied ? '已复制' : '复制' }}</button>
       </header>
       <Markdown :text="turn.content" />
     </template>
@@ -58,7 +63,8 @@ async function copy(): Promise<void> {
 
 .turn.user { align-items: flex-end; }
 .bubble { max-width: min(78%, 640px); margin-top: 6px; padding: 11px 16px; border: 1px solid var(--cyan-line); border-radius: 10px 10px 2px 10px; background: linear-gradient(135deg, rgba(31, 96, 120, .5), rgba(21, 62, 82, .42)); font-size: 14px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
-.turn-selection { display: inline-flex; align-items: center; gap: 8px; max-width: min(78%, 640px); margin-top: 7px; padding: 3px 10px 3px 3px; border: 1px solid var(--line-2); border-radius: 3px; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
+.turn-foot { display: flex; flex-direction: row-reverse; align-items: center; justify-content: flex-start; gap: 8px; max-width: min(78%, 640px); margin-top: 7px; }
+.turn-selection { display: inline-flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 10px 3px 3px; border: 1px solid var(--line-2); border-radius: 3px; font-size: 12px; color: var(--text-2); overflow-wrap: anywhere; }
 .turn-selection span { flex: 0 0 auto; padding: 1px 6px; border-radius: 2px; background: var(--cyan-soft); font-size: 11px; letter-spacing: .14em; color: var(--cyan); }
 
 .turn.assistant { padding: 16px 20px 18px; border: 1px solid var(--line); border-left: 2px solid var(--cyan); border-radius: var(--radius-lg); background: linear-gradient(180deg, rgba(15, 31, 52, .9), rgba(9, 21, 37, .93)); }
@@ -66,7 +72,9 @@ async function copy(): Promise<void> {
 .turn-badge { width: 16px; height: 6px; background: var(--cyan); transform: skewX(-38deg); }
 .turn-head .turn-author { color: var(--text); }
 .turn-meta { min-width: 0; overflow: hidden; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-3); text-overflow: ellipsis; white-space: nowrap; }
-.turn-copy { margin-left: auto; opacity: 0; transition: opacity .18s, color .18s, background .18s, border-color .18s; }
+.turn-head .turn-copy, .turn-head .turn-live { margin-left: auto; }
+.turn-live { color: var(--cyan); }
+.turn-copy { flex: 0 0 auto; opacity: 0; transition: opacity .18s, color .18s, background .18s, border-color .18s; }
 .turn:hover .turn-copy, .turn-copy:focus-visible { opacity: 1; }
 @media (hover: none) { .turn-copy { opacity: 1; } }
 
@@ -97,6 +105,6 @@ async function copy(): Promise<void> {
 .md :deep(.md-num) { font-style: italic; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 700px) {
   .turn.assistant { padding: 14px 14px 16px; }
-  .bubble, .turn-selection { max-width: 90%; }
+  .bubble, .turn-foot { max-width: 90%; }
 }
 </style>

@@ -6,7 +6,7 @@
 | --- | --- |
 | 模块标识 | frontend |
 | 核对日期 | 2026-11-13（Asia/Shanghai） |
-| 核对范围 | 三页切换到深色方案：记录/统计共用演示数据和筛选、详情与导出、设置实际显示偏好、全局演示与公共外壳；未重测 3D 和聊天 |
+| 核对范围 | 三页切换到深色方案：记录/统计共用演示数据和筛选、详情与导出、设置实际显示偏好、全局演示与公共外壳；同日增量：聊天改为逐段显示（`client.ts.postStream`、`chat.ts.streamChat`、`ChatView.vue`、`ChatTurn.vue`）；聊天输入区改为 Enter 发送、发送即清空（`ChatComposer.vue`、`ChatView.vue`）；用户发言下方加复制按钮（`ChatTurn.vue`）；未重测 3D |
 | 实现状态 | 部分实现：记录与统计共用沙盘联赛演示记录；设置可保存本机显示偏好并读取运行状态；正式预测、赛果、复盘保存和后台配置管理未实现 |
 | 验证程度 | 本轮类型检查与构建通过（268 modules）；三页 1440px/390px 无整页横向溢出，筛选、CSV 导出、详情键盘、图表键盘、跨页数字一致、偏好刷新保留与演示关闭通过；接口均为模拟，未调用模型或刷新盘口 |
 | Git 基准 | `acce9c3` + 本轮工作区改动；未提交、未推送 |
@@ -55,7 +55,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `recheck` / `bookmakers` / `restore` / `preferences` | 运行状态、只读后台规则；赔率格式、默认报价平台、动态背景与演示偏好即时生效，保存到本机浏览器 |
 | [useRecordScope.ts](../../frontend/src/composables/useRecordScope.ts) / [RecordFilters.vue](../../frontend/src/components/records/RecordFilters.vue) | `filters` / `records` / `query` / `reset` | 两页共用时间、玩法、记录来源、判断来源和策略筛选；最近 N 天按北京时间，全部时间含未来待开赛；页间链接携带共同筛选，不携带记录页专用的搜索与结算筛选 |
 | [components/common/](../../frontend/src/components/common/SideDrawer.vue) | `SideDrawer` / `DemoRibbon` / `EmptyState` / `TeamMark` / `StationIcon` | 侧边抽屉（焦点不外漏）、演示数据提示带、空状态、球队标记、模块图标 |
-| [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `getHealth` | GET 为 5 秒超时，POST 聊天按后端超时加 10 秒；脱敏错误提示及格式核对 |
+| [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `postStream` / `getHealth` | GET 为 5 秒超时；`postStream` 读取后端 SSE（event/data），总超时为后端超时加 10 秒，开始推送前按 HTTP 状态给错误；脱敏错误提示及格式核对 |
 | [vite.config.ts](../../frontend/vite.config.ts) | `proxy` | 本机开发与预览时将 `/api` 转给后端 |
 | [package.json](../../frontend/package.json) | `scripts` / `engines` | 开发、类型检查、构建命令及 Node.js 要求 |
 
@@ -63,7 +63,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 - 输入：页面地址、连接与配置检查、聊天输入、发送与新对话按钮。
 - 输出：连接状态、模型配置状态、等待提示、回答与错误。回答里的 Markdown（标题、加粗、列表、表格、引用、代码）会排版显示，但只生成文字和固定的几种标签，不解析也不执行回答里的 HTML；链接只接受 http/https。
-- 依赖：[后端](backend.md) `/api/v1/health`、`GET /api/v1/model` 与 `POST /api/v1/chat`；Vite 转发到默认 `http://127.0.0.1:8000`。[chat.ts](../../frontend/src/api/chat.ts) 核对聊天结果与模型状态。
+- 依赖：[后端](backend.md) `/api/v1/health`、`GET /api/v1/model` 与 `POST /api/v1/chat/stream`；Vite 转发到默认 `http://127.0.0.1:8000`。[chat.ts](../../frontend/src/api/chat.ts) 核对聊天结果与模型状态。
 - 配置：见 [前端配置示例](../../frontend/.env.example)。真实 Key 不放进前端，也不放进会向浏览器公开的 `VITE_` 变量。
 
 ## 已实现与缺口
@@ -73,7 +73,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | 页面切换 | 已注册首页和各业务入口 | `router/index.ts` 中的路由表 |
 | 后端连接检查 | 有真实请求、响应核对、超时与手动重查逻辑；回到标签页且距上次检查超过 60 秒时自动再查一次 | `getHealth`、`getJson`、`stores/system.ts` 的 `checkHealth` |
 | 比赛与盘口 | 独立页面按北京时间筛选今天、明天、近 7 天、全部已开盘，按平台展示报价；选好平台后交给 AI | [MatchBoard.vue](../../frontend/src/components/odds/MatchBoard.vue)、[MatchCard.vue](../../frontend/src/components/odds/MatchCard.vue)、[MarketQuote.vue](../../frontend/src/components/odds/MarketQuote.vue) |
-| AI 聊天 | 每次读取最新保存快照；选场时只使用该比赛该平台，问题历史保留选场标签；等待中阻止重复提交、失败保留输入、不自动重试 | `ChatView.vue`、[chat.ts](../../frontend/src/api/chat.ts)、[类型](../../frontend/src/types/api.ts) |
+| AI 聊天 | 每次读取最新保存快照；选场时只使用该比赛该平台，问题历史保留选场标签；Enter 发送、Shift+Enter 换行，输入法组字时的回车不发送；发送即清空输入框，失败时把问题放回输入框；回答逐段显示（标“生成中…”、不能复制），收到完整结果才进入聊天记录，中途失败丢弃半截内容；用户停在底部附近时跟随滚动；等待中阻止重复提交、不自动重试；用户问题与助手回答都有悬停显示的“复制”按钮（用户发言只复制问题原文，不含选场标签） | `ChatView.vue`、[ChatTurn.vue](../../frontend/src/components/chat/ChatTurn.vue)、[chat.ts](../../frontend/src/api/chat.ts)、[类型](../../frontend/src/types/api.ts) |
 | 预测记录与复盘详情 | 共用沙盘联赛数据；筛选、结算详情与 CSV 可用；演示笔记只读，旧版填写/归档入口已退出当前路由，正式保存未实现 | `RecordsView` / `RecordDrawer` / `recordsToCsv` |
 | 效果统计 | domain/ 按记录计算，支持命中率区间、模拟盈亏/ROI、覆盖率、走势、周表现、版本对比；全局演示关闭后显示无正式数据 | `StatisticsView` / `domain/metrics.ts` / `components/stats/` |
 | 长期记忆 | 仅界面：父块机柜、子块详情与操作、维护记录，演示内容只在本页内存 | [MemoryView](../../frontend/src/views/MemoryView.vue)、[MemoryRack](../../frontend/src/components/memory/MemoryRack.vue) |
@@ -96,6 +96,9 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 | 日期 | 方式 | 实际结果与边界 |
 | --- | --- | --- |
+| 2026-11-13 | 用户发言复制按钮：`npm --prefix frontend run type-check` 与浏览器（5174 端口，页面内拦截 `POST /api/v1/chat`） | 类型检查通过；用户气泡下出现“复制”，点击后写入剪贴板的内容为问题原文、按钮变“已复制”；助手回答复制按钮仍在；带选场标签时按钮在标签左侧同一行，复制内容不含选场；控制台无报错。未在手机实机测试 |
+| 2026-11-13 | 聊天逐段显示：`npm --prefix frontend run build`；浏览器（另起 5175 端口，转发到临时模拟后端，模拟后端只推送固定文字，不调用模型） | 构建通过；发送后先显示等待卡片，约 1.5 秒后出现“生成中…”的回答，文字长度 20 → 52 → 86 → 120 递增，完成后进入记录、出现复制按钮和用量；模拟中途 error：半截回答消失、问题回填输入框、显示错误；控制台无错误。未连真实后端与模型，未测 Safari 与手机 |
+| 2026-11-13 | 聊天输入区 Enter 发送：`npm --prefix frontend run type-check` 与浏览器（另起 5174 端口，页面内拦截 `POST /api/v1/chat`） | 类型检查通过；Enter 后输入框立即清空并禁用，回答返回后保持为空；Shift+Enter、`isComposing`、`keyCode 229` 和纯空格均不发请求；模拟 500 失败后问题回填并显示错误。未调用真实模型，未在 Safari 实机和真实中文输入法下测试 |
 | 2026-11-13 | 深色三页切换，构建与 Chromium 模拟接口 | 268 modules；默认 95 条/+6.34 单位，筛选让分 48 条/+2.93 单位，CSV 48 行并带虚构标记，跨页统计相同；五种结算状态、抽屉 Tab/Esc、图表方向键、偏好刷新保留、演示关闭后空状态通过；三页 1440/390px 溢出 0，pageerror 0，仅 GET 请求；未验证真实后台、Excel 实机、手机实机或 3D |
 | 2026-11-13 | PR #2 审查、`npm --prefix frontend run build` 与 Chromium 浏览器 | 修正后类型检查通过，`255 modules transformed / built in 240ms`；六页 1440px/390px 无横向溢出，浅色三页恢复底色；模拟聊天切页保留、HTML 不执行、所选平台 b 请求、示例历史不混入真实请求、抽屉 Tab/Esc 通过；自动演示 11 张卡片，关闭后 0；无 WebGL 时仍可进原目标页；3D 场景和比赛进入/暂停/退出通过。GPU ReadPixels 和并行 shader 扩展警告导致无头浏览器等待超时，之后确认就绪；未验证真实性能、手机实机、真实接口或付费调用 |
 | 2026-11-12 | 合入 dev 前增量核对：`npm --prefix frontend run build`、Node 离线断言、`git diff --check` | 类型检查通过，`81 modules transformed / built in 143ms`；默认统计 100 笔结算、58 赢 42 输、+8.6 元、8.6% ROI 与曲线一致，特殊状态及空样本通过；两份初始档案、同场玩法关联、空白拦截、摘要回退和追加保留原文通过。本轮未重跑浏览器，以下浏览器结果为历史证据；未调用模型、更新盘口或验证正式存储 |
@@ -164,7 +167,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 - `App.vue` 只渲染当前路由；`MatchesView` 装入比赛区，`AppShell` 新增侧栏入口。保留原有日期筛选、平台切换和手动更新。
 - `MatchCard.analyze` 把比赛与平台标识写入内存选择，跳转聊天，不自动发送或调用付费模型；聊天可取消选择或新开对话，普通提问也能读取全部保存比赛。
-- `chat.ts.sendChat` 发送可选 `odds_selection`；报价由后端从磁盘读取，浏览器不上传盘口数值。最新快照不再含所选比赛或平台时显示后端错误并保留输入。
+- （2026-11-13 起改为 `chat.ts.streamChat`）`chat.ts.sendChat` 发送可选 `odds_selection`；报价由后端从磁盘读取，浏览器不上传盘口数值。最新快照不再含所选比赛或平台时显示后端错误并保留输入。
 - `npm --prefix frontend run build`：`66 modules transformed / built in 102ms`。浏览器真实验证：直接提问识别明天前两场；选择凯尔特人对猛龙 DraftKings 后回答 `-7.5 / +7.5`、总分 `216.5`，四项赔率与页面一致。进入比赛页再返回仍保留原问答。
 - 本次没有更新外部盘口，仅两次真实模型问答；后端离线检查 `Ran 19 tests in 0.084s / OK`。截图及具体边界见 [本次交接](../handoff/2026-11-11-独立比赛页与AI盘口联动.md)。
 
@@ -255,7 +258,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 页面占满状态条以下的高度，记录在中间滚动，输入区固定在底部；宽屏右侧有资料栏，窄于 1180 像素时收进“本次资料”抽屉。
 - 起始画面有三步流程、三个点一下就填进输入框的问题（不会自动发送），以及从真实快照里最近的四场比赛直接选场。右上角的全息球场是装饰。
 - 回答按 Markdown 排版；每条回答显示模型名、等待秒数和 token 用量（后端返回时）。等待时显示已等时间和最长等待时间，小球场上的传球动画只是装饰，不表示处理阶段。
-- 发送方式从“只能点按钮”改为按钮或 Ctrl/⌘+Enter；单按 Enter 是换行，避免误发产生费用。
+- 发送方式从“只能点按钮”改为按钮或 Ctrl/⌘+Enter；单按 Enter 是换行，避免误发产生费用。（2026-11-13 应用户要求改为单按 Enter 发送、Shift+Enter 换行，当前行为见“已实现与缺口”。）
 - 资料栏显示后端会读到的快照状态、当前选场在快照里的报价（只是显示，发送时仍由后端重新读取）、本轮提问次数和累计 token。
 - 示例对话：演示数据打开且没有真实比赛可选时，可以看一段用演示盘口拼出来的两轮问答，顶部标注“没有调用模型”，此时不能继续提问，点“新对话”清除。
 

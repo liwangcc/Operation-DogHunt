@@ -32,6 +32,8 @@ class FixedClock(datetime):
 
 service.read_board = lambda: build_board(snap, now)
 service.datetime = FixedClock
+service.load_history = lambda: []      # 不读本机真实的历史快照
+service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成该用例给出的固定赛程
 # 之后 await service.chat(ChatRequest(...), get_settings())；选场用例的 odds_selection 取 snap["_eval"]["selection"]
 ```
 
@@ -46,12 +48,12 @@ service.datetime = FixedClock
 - 来源：首版 / issues.md 的编号
 ```
 
-## E-001｜核心｜output、method、sources
+## E-001｜核心｜output、method、sources、odds
 - 快照：S-001
 - 前置：在比赛与盘口页选定一场比赛和平台
 - 问题：分析这场
-- 期望：按模板输出八项；每条依据标 A/B/C；只有 C 级资料时把握为低，预计分差与总分写“资料不足，不给数字”；让分写成“哪边加或减几分”，不写成“哪队赢”。不能只因缺伤病资料就观望：给方向时把握为低，缺的资料写进“缺失资料”和“主要风险”；给观望时说明是哪条原因
-- 来源：首版；I-001（v1 下直接观望，回答信息量偏少）
+- 期望：结论、预计放在第一、二行；让分和大小分都给出倾向的一边，不出现“观望”；预计分差与总分都给范围，且和倾向一致；结论行每个把握后有一句原因；让分、大小分各有因素表（缺失的因素也列出，每行标 A/B/C）、“预计怎么来的”（从共识线出发）和“把握说明”（命中哪档、补什么能升档）；用到 market_signals 时让分写成双方写法（“某队 +x / 某队 -x”），不把主队视角的点数原样写出；只有 C 级资料和 1 分以内报价差时把握为低；不为凑行数补 C 级泛泛判断；表格外约 700 字以内，没有开场白、结尾总结和免责声明；让分写成“哪边加或减几分”，不写成“哪队赢”
+- 来源：首版；I-001（v1 下直接观望）；I-002（v2 下仍观望、不给数字、篇幅长）；I-004（v3 起要求写推导和把握原因，放宽 300 字）
 
 ## E-002｜核心｜output、odds
 - 快照：S-001
@@ -87,3 +89,30 @@ service.datetime = FixedClock
 - 问题：我觉得应该选主队
 - 期望：解释理由，不因用户没有新资料的反驳而改判断
 - 来源：首版
+
+## E-007｜核心｜odds、method
+- 快照：S-001
+- 前置：不选场
+- 问题：湖人这场怎么看（换成快照里任一已开盘比赛的一支球队的中文名）
+- 期望：只分析这支球队的比赛，不要求用户先去选场；注明所用平台，跨平台引用 market_signals 时说明是共识；movement 的 snapshots 为 1 时不说盘口有变动
+- 来源：I-002（未选场时按球队聚焦与市场信号）
+
+## E-008｜核心｜odds、method、sources
+- 快照：S-001；赛程用下面的固定记录（合成数据），试跑时 `service.load_schedule = lambda: SCHEDULE`
+  ```python
+  SCHEDULE = {"provider": "BALLDONTLIE", "fetched_at": "2026-11-14T00:00:00Z", "dates": ["2026-11-08", "2026-11-09", "2026-11-10", "2026-11-11", "2026-11-12", "2026-11-13"], "games": [
+      {"id": 1, "date": "2026-11-10", "home": "Denver Nuggets", "away": "Utah Jazz", "status": "Final"},
+      {"id": 2, "date": "2026-11-12", "home": "Los Angeles Lakers", "away": "Phoenix Suns", "status": "Final"},
+      {"id": 3, "date": "2026-11-13", "home": "Denver Nuggets", "away": "Los Angeles Lakers", "status": "7:00 pm ET"}]}
+  ```
+- 前置：选定湖人 @ 掘金、DraftKings（S-001 的 selection）
+- 问题：分析这场
+- 期望：依据或缺失资料里写出“湖人背靠背、掘金休 2 天”，标 A 级；休息差作为理由时说明盘口通常已计入，单凭它把握不超过“中”；不因赛程资料推断伤病；另跑一次 `load_schedule` 返回 None，回答写“赛程与体能缺失”，不凭记忆说背靠背
+- 来源：I-003（接入免费赛程后的休息天数）
+
+## E-009｜核心｜output、method
+- 快照：S-001；赛程用 E-008 的固定记录（湖人背靠背、掘金休 2 天）
+- 前置：选定湖人 @ 掘金、DraftKings（S-001 的 selection）
+- 问题：帮我预测一下这场
+- 期望：让分节的因素表里有报价差、休息差两行（数据照 market_signals 和 schedule_rest），伤病一行写“缺失”；“预计怎么来的”写出共识线、向哪边调几分、调整对应哪几行，范围中点和倾向一致；伤病未知时两个玩法都不能是“高”；让分倾向掘金且没有同等分量的反向因素时把握为“中”，说明命中“休息差”，并写出补伤病资料后可能的变化；大小分只用报价差时把握为“低”，不把休息差直接算进大小分，除非写明理由
+- 来源：I-004（把握没有原因、预计没有推导；休息差的档位有歧义）

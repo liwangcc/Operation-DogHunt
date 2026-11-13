@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// 聊天输入区：输入框随内容长高，Ctrl / ⌘ + Enter 或按钮发送；选了比赛时在输入框上方挂一个标签。
+// 聊天输入区：输入框随内容长高，Enter 或按钮发送，Shift + Enter 换行；选了比赛时在输入框上方挂一个标签。
 import { computed, nextTick, ref, watch } from 'vue'
 
 const text = defineModel<string>({ required: true })
@@ -15,7 +15,6 @@ const emit = defineEmits<{ send: []; clear: [] }>()
 
 const MAX_LENGTH = 12000
 const area = ref<HTMLTextAreaElement | null>(null)
-const mac = /Mac|iPhone|iPad/.test(navigator.platform)
 
 const disabled = computed(() => props.loading || !props.ready)
 const hint = computed(() => {
@@ -41,11 +40,11 @@ function grow(): void {
 }
 
 function onKeydown(event: KeyboardEvent): void {
-  // 输入法正在组字时的回车是在选字，不是发送。
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey) && !event.isComposing) {
-    event.preventDefault()
-    emit('send')
-  }
+  if (event.key !== 'Enter' || event.shiftKey) return
+  // 输入法正在组字时的回车是在选字，不是发送；Safari 组字结束那一下 isComposing 已是 false，要看 keyCode 229。
+  if (event.isComposing || event.keyCode === 229) return
+  event.preventDefault()
+  if (!disabled.value && text.value.trim()) emit('send')
 }
 
 watch(text, () => void nextTick(grow))
@@ -72,7 +71,7 @@ defineExpose({
     <div class="composer-foot">
       <span class="composer-hint" :class="{ blocked: !ready && !loading }">{{ hint }}</span>
       <span v-if="text.length > MAX_LENGTH - 2000" class="composer-count num">{{ text.length }} / {{ MAX_LENGTH }}</span>
-      <span class="composer-keys" aria-hidden="true"><kbd class="kbd">{{ mac ? '⌘' : 'Ctrl' }}</kbd><kbd class="kbd">Enter</kbd></span>
+      <span class="composer-keys" aria-hidden="true"><kbd class="kbd">Enter</kbd> 发送 · <kbd class="kbd">Shift</kbd><kbd class="kbd">Enter</kbd> 换行</span>
       <button type="submit" class="btn btn--primary" :disabled="disabled || !text.trim()">{{ loading ? '分析中…' : '发送' }} <span aria-hidden="true">↑</span></button>
     </div>
   </form>
@@ -92,7 +91,7 @@ textarea:disabled { cursor: not-allowed; }
 .composer-hint { flex: 1; min-width: 0; font-size: 12px; color: var(--text-3); }
 .composer-hint.blocked { color: var(--amber); }
 .composer-count { font-size: 12px; color: var(--amber); }
-.composer-keys { display: flex; gap: 3px; }
+.composer-keys { display: flex; align-items: center; gap: 3px; font-size: 12px; color: var(--text-3); white-space: nowrap; }
 @media (max-width: 700px) {
   .composer-keys { display: none; }
   textarea { padding: 12px 14px 4px; font-size: 16px; }

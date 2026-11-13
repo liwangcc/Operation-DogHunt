@@ -2,6 +2,7 @@
 .env.*
 !.env.example
 data/odds/
+data/schedule/
 __pycache__/
 *.pyc
 .DS_Store

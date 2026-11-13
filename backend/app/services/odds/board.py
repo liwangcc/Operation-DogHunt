@@ -9,6 +9,7 @@ from time import monotonic
 
 from app.integrations.odds import PROJECT_ROOT, odds_tool
 from app.schemas.odds import OddsBoard, OddsBookmaker, OddsEvent, OddsMarket, OddsOutcome
+from app.services.odds import schedule
 
 SNAPSHOT_ROOT = PROJECT_ROOT / "data" / "odds"
 STALE_SECONDS = 15 * 60
@@ -122,10 +123,12 @@ def refresh_board() -> OddsBoard:
             snapshot = {"fetched_at": odds_tool.iso(fetched), "raw_events": events, "quota": quota}
             board = build_board(snapshot, fetched)
             odds_tool.save_snapshot(events, rows, quota, requested, fetched)
-            return board
         except odds_tool.FetchError as error:
             raise OddsRefreshError(str(error), 502) from None
         except (OSError, ValueError, TypeError, KeyError, AttributeError):
             raise OddsRefreshError("数据格式异常或新快照保存失败，已保留原有快照；本次请求可能已消耗额度。", 502) from None
+        # 盘口已保存；赛程是可选资料，失败只记日志，不影响这次更新的结果。
+        schedule.log_refresh(board.events)
+        return board
     finally:
         _refresh_lock.release()

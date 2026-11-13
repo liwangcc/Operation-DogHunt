@@ -1,10 +1,10 @@
 {
   "active": [
     "chat_role_v1",
-    "chat_sources_v1",
-    "chat_odds_v1",
-    "chat_method_v2",
-    "chat_output_v1"
+    "chat_sources_v2",
+    "chat_odds_v3",
+    "chat_method_v4",
+    "chat_output_v3"
   ],
   "files": {
     "chat_method_v1": {
@@ -15,13 +15,37 @@
       "sha256": "b98cb91f6655d468324bd1f61b72de79d25c054056c4578810f312389cfa8729",
       "chars": 619
     },
+    "chat_method_v3": {
+      "sha256": "cce22b20a9b59ae719cd62d1084e3521db85c849dfef280688e789b6716b10e3",
+      "chars": 778
+    },
+    "chat_method_v4": {
+      "sha256": "aef0bd66aa59e44a28d16d73ca643c7eab6109d02c81edaba7eb2c64168dcb6f",
+      "chars": 853
+    },
     "chat_odds_v1": {
       "sha256": "f6bb72223b93d16fe2c42160c94cc296e9a6920a049517d1c3988f4edcddc363",
       "chars": 497
     },
+    "chat_odds_v2": {
+      "sha256": "1765730c38c1fa1646b81f23581b9670301a20d9cc86048e82299706189ccee4",
+      "chars": 1002
+    },
+    "chat_odds_v3": {
+      "sha256": "77906e5427697e869ba101e92803c29cf14eb28276241a0fd22923011f6a6985",
+      "chars": 1344
+    },
     "chat_output_v1": {
       "sha256": "01a277d874cc285fa2e002ffaec13fbd961e03920983738842b0923e3f82958f",
       "chars": 749
+    },
+    "chat_output_v2": {
+      "sha256": "a094b3f1c3185ad477c39f55feecb89318668a98f3d0d97b69ad8e1f9024b616",
+      "chars": 798
+    },
+    "chat_output_v3": {
+      "sha256": "e25cfb958a809890f797d6072b61bc912936fb437c14fa9cdd550c3ccd391eff",
+      "chars": 1552
     },
     "chat_role_v1": {
       "sha256": "c65aab4c4950e9a5a65af469c519d43dfc1e3e4fe2d65bb953fbdd4b7e676ec6",
@@ -30,8 +54,12 @@
     "chat_sources_v1": {
       "sha256": "6a7e6096d3e1a125749fb870e6f12f174632c730f4ec7f2cbe1ac4e911ba595f",
       "chars": 405
+    },
+    "chat_sources_v2": {
+      "sha256": "df782a1df729a185415d93fa8cf106f8dad71e91770377dcf2d3e2bc3830a075",
+      "chars": 466
     }
   },
-  "static_sha256": "56980a1d7a5a682051c0994b4b5e73b42873a33f21ad8a53a57baf546ee32667",
-  "static_chars": 2520
+  "static_sha256": "b84eb3eb3d252e53d5116a6be9d95b4dfaaf214d8191b228292006f9ab29b91d",
+  "static_chars": 4465
 }
