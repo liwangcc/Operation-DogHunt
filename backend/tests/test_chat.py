@@ -474,7 +474,10 @@ class EvalSnapshotTests(unittest.TestCase):
         self.assertIsNotNone(schedule)
         self.assertIsNotNone(injuries)
         now = datetime.fromisoformat(snap["_eval"]["now"].replace("Z", "+00:00"))
-        context = json.loads(odds_context(build_board(snap, now), OddsSelection(**snap["_eval"]["selection"]), None, [], schedule, injuries))
+        # 盘口与伤病共用固定快照时钟，避免样例在真实时间超过 12 小时后无故失败。
+        with patch("app.services.odds.injuries.datetime", wraps=datetime) as clock:
+            clock.now.return_value = now
+            context = json.loads(odds_context(build_board(snap, now), OddsSelection(**snap["_eval"]["selection"]), None, [], schedule, injuries))
         form = context["team_form"]["events"]["s001-lal-den"]
         self.assertEqual([(form[k]["games"], form[k]["avg_margin"], form[k]["avg_game_total"]) for k in ("home", "away")], [(9, 6.0, 232.0), (10, -1.0, 236.0)])
         self.assertEqual(form["home_minus_away_avg_margin"], 7.0)

@@ -8,7 +8,7 @@
 | 核对日期 | 2026-11-14（Asia/Shanghai） |
 | 核对范围 | 本轮增量：近期战绩与 ESPN 伤病（见末尾“近期战绩与伤病增量”）：`integrations/espn.py`、`services/odds/team_form.py`、`services/odds/injuries.py`，赛程窗口扩到近 30 天并保留比分，赛程与伤病改为后台取数，聊天 `team_form` / `injuries`，提示词 sources_v3/odds_v4/method_v5/output_v4；上一增量：聊天预测模板 `chat_output_v3`（见“单场分析推导增量”），只改提示词与记录文件，代码未改；更早增量：免费赛程与休息天数（见末尾“免费赛程增量”）：`integrations/balldontlie.py`、`services/odds/schedule.py`、`refresh_board` 顺带取赛程、聊天 `schedule_rest`、提示词 sources_v2/odds_v3/method_v4；上一增量：聊天提速与预测改版（见末尾“聊天提速与必给倾向增量”）：思考强度默认改 `high`、流式接口 `/chat/stream`、按球队聚焦、市场信号 `signals.py`、提示词 odds_v2/method_v3/output_v2、`app.*` 日志输出；当日更早增量：后端思考强度配置与 `request_model` 请求；当日其他增量：功能块分数口径与 strength_v2（见“功能块框架增量”末尾）；功能块提示词目录、`services/analysis` 读取与检查框架、jsonschema 依赖与离线测试；聊天提示词迁到 `prompts/chat/` 并加锁文件检查，随后 `chat_method_v2` 与固定回归快照（均见“聊天提示词增量”）；盘口代码未改，沿用 2026-11-11 核对 |
 | 实现状态 | 部分实现：真实聊天每次读取保存盘口，支持单场单平台；功能块框架可读取、拼装、检查并纠正一次，但只有草稿实力块（当前样板 strength_v2）且无调用入口；正式预测保存、记忆和任务恢复未实现 |
-| 验证程度 | 本轮（战绩与伤病）90 项离线测试通过、`prompt check` 通过；ESPN 真实接口取一次，28 队 103 人全部对上（含快船写法）；BALLDONTLIE 本机未配置 Key，比分字段和翻页页数未实测；未调用真实模型。上一增量（output_v3）80 项离线测试通过、`prompt check` 通过；真实模型试跑 E-001、E-009 通过，其他用例未重跑。上一增量：全部离线测试 80 项通过、`prompt check` 通过；真实赛程接口已调用：13 场全部对上、休息天数已进入聊天上下文；未调用真实模型。上一增量：75 项通过，运行中的本机后端已出现 `/api/v1/chat/stream`，提速效果和新提示词效果都未实测。历史：当日早些时候 `test_chat.py` 21 项离线通过（当时默认 `xhigh`）；2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；分数口径与 `chat_method_v2` 两项改动合并后，Windows 本机跑 60 项通过（`RouteTests` 未跑，见验证记录）；`chat_method_v2` 与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
+| 验证程度 | 本轮（PR #6 审核）90 项离线测试、`prompt check` 及固定伤病样例未来时钟检查通过；BALLDONTLIE 真实只读取数返回 226 场、174 场最终比分，未保存正式数据；ESPN 沿用作者真实取数记录（28 队 103 人全部对上，含快船写法），本轮未重新请求；新提示词未调用真实模型。上一增量（output_v3）80 项离线测试通过、`prompt check` 通过；真实模型试跑 E-001、E-009 通过，其他用例未重跑。上一增量：全部离线测试 80 项通过、`prompt check` 通过；真实赛程接口已调用：13 场全部对上、休息天数已进入聊天上下文；未调用真实模型。上一增量：75 项通过，运行中的本机后端已出现 `/api/v1/chat/stream`，提速效果和新提示词效果都未实测。历史：当日早些时候 `test_chat.py` 21 项离线通过（当时默认 `xhigh`）；2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；分数口径与 `chat_method_v2` 两项改动合并后，Windows 本机跑 60 项通过（`RouteTests` 未跑，见验证记录）；`chat_method_v2` 与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
 
 ## 负责什么
 
@@ -43,13 +43,14 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 | 自动外部取数与记忆 | 未实现；聊天只读快照，不具备自动更新盘口或联网伤病工具 | [memory](../../backend/app/services/memory/__init__.py) |
 | GPT 中转连接 | 已实现：Responses 流式接口，每次显式发送 `reasoning.effort`（后端可配，默认 `high`）；`stream_model` 边收边产出 `TextDelta`，最后产出完整结果，`request_model` 收齐后返回；日志记录首字时间、总耗时与 token 数；完整结果校验、总超时和错误脱敏，不自动重试、不跟随重定向 | [llm.py](../../backend/app/integrations/llm.py) |
 | 数据库和持久化 | 未选定数据库、未建表，仅预留目录 | [db](../../backend/app/db/__init__.py)、[models](../../backend/app/models/__init__.py)、[repositories](../../backend/app/repositories/__init__.py) |
-| 任务、超时恢复、定期维护 | 仅预留，没有后台任务 | [tasks](../../backend/app/tasks/__init__.py) |
+| 任务、超时恢复、定期维护 | 通用任务框架仍仅预留；手动更新盘口后已有 `board.start_extras` 后台线程获取赛程与伤病，无持久任务和失败恢复 | [tasks](../../backend/app/tasks/__init__.py)、[board.py](../../backend/app/services/odds/board.py) |
 | 聊天测试 | 本轮起含流式（逐段、完成、开始后失败释放锁、开始前 409/503）、球队聚焦与追问沿用、市场信号（`test_odds.py`）；原有 21 项 unittest 离线验证，包括默认/自定义思考强度的请求参数、盘口上下文、选场平台隔离、过期选择、输入、半截流、异常与并发，提示词锁文件与改版记录检查，以及回归用例引用的固定快照可用；不消耗真实额度 | [test_chat.py](../../backend/tests/test_chat.py) |
 
 ## 验证记录
 
 | 日期 | 方式 | 实际结果与边界 |
 | --- | --- | --- |
+| 2026-11-14 | PR #6 审核：90 项离线测试、`prompt check`、固定伤病样例的未来时钟检查；用项目 Key 只读获取 BALLDONTLIE 所需日期 | 90 项测试 `OK`，提示词“通过”；修复 D-001 按真实时间变旧导致测试失败的问题，将真实时钟模拟到 2027-01-01 后该用例仍 `OK`。BALLDONTLIE 返回 226 场，全部可整理，其中 174 场识别出最终比分，`status_state=final` 与整数比分字段匹配；未保存正式快照，未调用真实模型，未重新请求 ESPN |
 | 2026-11-13 | 聊天提速与必给倾向：`cd backend && .venv/bin/python -m unittest discover -s tests`、`prompt check`；`curl` 本机 `/api/openapi.json` | `Ran 75 tests / OK`，`check` 输出“通过”；运行中的后端已注册 `/api/v1/chat/stream`；离线测试里能看到“模型耗时”日志行。未调用真实模型：首字时间、`high` 与 `xhigh` 的速度差、中转是否逐段推送 `response.output_text.delta`、新提示词是否真的给倾向，都待真实试跑 |
 | 2026-11-13 | `.venv/bin/python -m unittest discover -s tests -p test_chat.py -v`；读取实际配置；本地健康检查 | `Ran 21 tests in 0.093s / OK`，模拟请求验证默认 `xhigh` 和自定义 `high`；实际 `.env` 配置为 `xhigh`；开发服务自动重载，健康检查 `status: ok`。未调用真实模型，不能证明中转接受或执行此档位。 |
 | 2026-11-11 | [项目骨架交接中的历史 HTTP 检查](../handoff/2026-11-11-Vue与FastAPI项目骨架.md) | 后端直连与前端转发健康检查均 HTTP 200，`/api/docs` HTTP 200；接口格式仅暴露已实现的健康检查，不证明外部服务或业务功能可用 |
@@ -67,7 +68,7 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 
 - 健康检查只反映应用能否响应，不检查外部服务或存储。
 - 当前使用用户指定地址与模型名，项目独立 Key 已验证可用；不从 Codex 复制认证。数据库及生产部署仍待确定。
-- 当前已接入卡片选场与保存盘口；下一步补充可靠数据工具和正式预测存储。快照不是实时行情，没有联网伤病或比分工具。
+- 当前已接入卡片选场与保存盘口；手动刷新后后台获取赛程比分与 ESPN 伤病，聊天只读保存数据。快照不是实时行情，正式预测存储仍待实现。
 - 输入限制：最多 41 条消息、单条 12000 字符、总计 60000；默认 120 秒超时、最多输出 4096 tokens。超时后供应商可能仍已计费。
 - 当前进程内并发限制不是跨进程任务系统；对话不保存，也不支持刷新恢复。认证错误与流中断只返回安全提示，不转发中转站原文。
 
@@ -209,3 +210,11 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 - 测试：`test_odds.py` 新增比分保留、30 天窗口、`TeamFormTests` 2 项、`InjuryTests` 4 项、后台补充取数 1 项；刷新测试改为打桩 `start_extras`；`test_chat.py` 新增上下文用例和 D-001 用例，路由测试打桩 `load_injuries`。
 - 验证：`cd backend && .venv/Scripts/python.exe -m unittest discover -s tests` → `Ran 90 tests / OK`；`prompt check` → 通过。ESPN 真实请求 1 次：200，28 队、103 人，全部对上。BALLDONTLIE 本机未配置 Key，没有实测 `status_state` 与比分字段、近 30 天的实际页数；未调用模型，E-010、E-011 未试跑。
 - 风险：ESPN 接口无文档，字段可能变化或被限制，服务条款未核实；伤病可能滞后于球队官方报告。原始净胜分没按对手强弱调整，季初样本小（少于 5 场只作参照）。赛程与伤病在后台取，刚点完更新就提问时可能还是上一份数据。
+
+### PR #6 审核补充（2026-11-14）
+
+- 核对基准：`dev` 的 `41227b3` → PR 的 `d037f13`，另有本轮测试与文档修正；业务代码及当前提示词版本未被本轮修正改变。
+- 作者未实测的 BALLDONTLIE 比分字段已在本机补验：一轮完整分页读取 226 场，174 场有最终比分，所有比赛均能规范化。数据只用于审核，没有写入正式 `data/schedule/`。
+- `EvalSnapshotTests.test_d001_matches_numbers_in_cases` 原先按真实时钟判断固定伤病列表是否过期，会在 2026-11-14 20:30（北京时间）之后失败；现用 S-001 的固定时钟判断。`eval_cases.md` 的真实回归示例同步固定伤病时钟，避免 E-010、E-011 随运行日期改变输入语义。
+- 实际复验：90 项离线测试 `OK`；`prompt check` 输出“通过”；将真实时钟模拟到 2027-01-01 后，D-001 用例 `OK`。
+- 本轮没有真实调用模型，E-001、E-009、E-010、E-011 的新版本输出效果仍待试跑；ESPN 真实兼容性只沿用作者的取数记录。本轮对后端的代码地图增量核对不改变其他模块的核对日期。

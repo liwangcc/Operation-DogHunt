@@ -22,6 +22,7 @@ from pathlib import Path
 from app.core.config import get_settings
 from app.schemas.chat import ChatRequest
 from app.services.chat import service
+from app.services.odds import injuries
 from app.services.odds.board import build_board
 
 snap = json.loads(Path("app/prompts/chat/eval_snapshots/S-001.json").read_text(encoding="utf-8"))
@@ -34,6 +35,7 @@ class FixedClock(datetime):
 
 service.read_board = lambda: build_board(snap, now)
 service.datetime = FixedClock
+injuries.datetime = FixedClock         # 伤病过期判断也使用快照时间，避免 D-001 随真实日期变旧
 service.load_history = lambda: []      # 不读本机真实的历史快照
 service.load_schedule = lambda: None   # 不读本机真实赛程；E-008 换成该用例给出的固定赛程，E-010、E-011 换成 D-001 的 schedule
 service.load_injuries = lambda: None   # 不读本机真实伤病；E-010、E-011 换成 D-001 的 injuries
