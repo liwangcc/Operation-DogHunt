@@ -13,7 +13,7 @@ from typing import Any
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import SchemaError
 
-from app.services.analysis.rules import RULES, BlockRules
+from app.services.analysis.rules import COMMON_FIELDS, MARKETS, RULES, BlockRules, insufficient_output
 
 PROMPTS_DIR = Path(__file__).resolve().parents[2] / "prompts"
 SHARED_FILES = ("rules.md", "glossary.md")
@@ -37,10 +37,15 @@ class BlockDefinition:
     output_schema: dict[str, Any]
     rules: BlockRules = field(compare=False)
     validator: Draft202012Validator = field(compare=False)
+    # 本块输出的玩法及分数口径，如 {"spread": "base"}；由 output_schema 的字段名推出。
+    markets: dict[str, str] = field(compare=False)
 
     @property
     def inputs(self) -> tuple[str, ...]:
         return self.core_inputs + self.optional_inputs
+
+    def insufficient_output(self, missing: list[str]) -> dict[str, Any]:
+        return insufficient_output(self.output_schema, missing)
 
 
 @dataclass(frozen=True)
@@ -110,6 +115,33 @@ def _check_output_schema(schema: Any) -> list[str]:
     return problems
 
 
+def _check_markets(properties: Any) -> tuple[dict[str, str], list[str]]:
+    """按字段名推出本块输出哪些玩法、分数是基准还是修正。每种玩法要么字段齐全，要么一个都不出现。"""
+    names = list(properties) if isinstance(properties, dict) else []
+    known = set(COMMON_FIELDS) | {n for fields in MARKETS.values() for n in fields.values()}
+    problems = []
+    if unknown := [n for n in names if n not in known]:
+        problems.append(f"output_schema 有未约定的字段 {unknown}，字段口径见 shared/glossary.md")
+    if absent := [n for n in COMMON_FIELDS if n not in names]:
+        problems.append(f"output_schema 缺少 {absent}")
+    markets: dict[str, str] = {}
+    for market, fields in MARKETS.items():
+        present = [n for n in fields.values() if n in names]
+        if not present:
+            continue
+        scores = [kind for kind in ("base", "adjust") if fields[kind] in names]
+        if fields["lean"] not in names or fields["confidence"] not in names or len(scores) != 1:
+            problems.append(
+                f"{market} 的字段不完整：需要 {fields['lean']}、{fields['confidence']}，"
+                f"以及 {fields['base']}（基准）和 {fields['adjust']}（修正）二选一，实际为 {present}"
+            )
+            continue
+        markets[market] = scores[0]
+    if not markets and not problems:
+        problems.append("output_schema 至少要输出一种玩法（让分或总分）")
+    return markets, problems
+
+
 def load_block(md_path: Path) -> BlockDefinition:
     stem = md_path.name.removesuffix(".md")
     schema_path = md_path.with_name(f"{stem}.schema.json")
@@ -135,6 +167,9 @@ def load_block(md_path: Path) -> BlockDefinition:
         problems.append(f"schema 的 id 为 {definition['id']}，应与文件名中的块编号 {block_id} 一致")
     problems += _check_inputs(definition["inputs"], prompt)
     problems += _check_output_schema(definition["output_schema"])
+    schema = definition["output_schema"]
+    markets, market_problems = _check_markets(schema.get("properties") if isinstance(schema, dict) else None)
+    problems += market_problems
     rules = RULES.get(block_id)
     if rules is None:
         problems.append(f"rules.py 的 RULES 里没有登记 {block_id} 的业务规则")
@@ -142,9 +177,9 @@ def load_block(md_path: Path) -> BlockDefinition:
         raise BlockDefinitionError(f"{md_path.name}：" + "；".join(problems))
 
     validator = Draft202012Validator(definition["output_schema"])
-    sample = rules.insufficient_output(list(definition["inputs"]["core"]))
+    sample = insufficient_output(definition["output_schema"], list(definition["inputs"]["core"]))
     if not validator.is_valid(sample):
-        raise BlockDefinitionError(f"{md_path.name}：rules.py 生成的“数据不足”输出不符合 output_schema")
+        raise BlockDefinitionError(f"{md_path.name}：程序生成的“数据不足”输出不符合 output_schema（方向字段要允许 insufficient，数值字段要允许 0）")
     return BlockDefinition(
         id=block_id,
         version=stem,
@@ -154,6 +189,7 @@ def load_block(md_path: Path) -> BlockDefinition:
         output_schema=definition["output_schema"],
         rules=rules,
         validator=validator,
+        markets=markets,
     )
 
 

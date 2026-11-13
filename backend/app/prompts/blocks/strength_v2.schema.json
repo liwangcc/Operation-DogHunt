@@ -1,0 +1,35 @@
+{
+  "id": "strength",
+  "version": "strength_v2",
+  "inputs": {
+    "core": ["elo_home", "elo_away", "elo_margin"],
+    "optional": [
+      "net_rtg_season_home",
+      "net_rtg_season_away",
+      "net_rtg_last10_home",
+      "net_rtg_last10_away",
+      "home_win_pct_home",
+      "away_win_pct_away",
+      "games_played_home",
+      "games_played_away"
+    ]
+  },
+  "output_schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+      "reasons",
+      "missing",
+      "spread_lean",
+      "spread_confidence",
+      "margin_pts"
+    ],
+    "properties": {
+      "reasons": {"type": "array", "items": {"type": "string", "minLength": 1}, "maxItems": 3},
+      "missing": {"type": "array", "items": {"type": "string"}},
+      "spread_lean": {"enum": ["home", "away", "neutral", "insufficient"]},
+      "spread_confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+      "margin_pts": {"type": "number", "minimum": -40, "maximum": 40}
+    }
+  }
+}

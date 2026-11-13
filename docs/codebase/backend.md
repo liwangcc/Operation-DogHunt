@@ -6,9 +6,9 @@
 | --- | --- |
 | 模块标识 | backend |
 | 核对日期 | 2026-11-13（Asia/Shanghai） |
-| 核对范围 | 当日增量：功能块提示词目录、`services/analysis` 读取与检查框架、jsonschema 依赖与离线测试；聊天提示词迁到 `prompts/chat/` 并加锁文件检查（见“聊天提示词增量”）；盘口代码未改，沿用 2026-11-11 核对 |
-| 实现状态 | 部分实现：真实聊天每次读取保存盘口，支持单场单平台；功能块框架可读取、拼装、检查并纠正一次，但只有草稿实力块且无调用入口；正式预测保存、记忆和任务恢复未实现 |
-| 验证程度 | 2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；同日 `chat_method_v2` 与固定快照后，Windows 本机跑 50 项通过（`RouteTests` 未跑，见验证记录）；`chat_method_v2` 与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
+| 核对范围 | 当日增量：功能块分数口径与 strength_v2（见“功能块框架增量”末尾）；功能块提示词目录、`services/analysis` 读取与检查框架、jsonschema 依赖与离线测试；聊天提示词迁到 `prompts/chat/` 并加锁文件检查，随后 `chat_method_v2` 与固定回归快照（均见“聊天提示词增量”）；盘口代码未改，沿用 2026-11-11 核对 |
+| 实现状态 | 部分实现：真实聊天每次读取保存盘口，支持单场单平台；功能块框架可读取、拼装、检查并纠正一次，但只有草稿实力块（当前样板 strength_v2）且无调用入口；正式预测保存、记忆和任务恢复未实现 |
+| 验证程度 | 2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；分数口径与 `chat_method_v2` 两项改动合并后，Windows 本机跑 60 项通过（`RouteTests` 未跑，见验证记录）；`chat_method_v2` 与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
 
 ## 负责什么
 
@@ -57,6 +57,7 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 | 2026-11-13 | 同上，加 `.venv/bin/python -m app.services.chat.prompt check` | `Ran 57 tests in 0.115s / OK`；`check` 输出“通过”；聊天提示词迁移后未做真实模型调用 |
 | 2026-11-13 | 直接调用 `services.chat.service.chat` 跑 4 条核心回归用例（真实模型，已过期的保存快照，未刷新盘口） | 原期望下 3 条通过，E-002 未列报价；放宽期望后 4 条通过；输入 14476 / 输出 1164 tokens；未经 HTTP 与网页。详见 [试跑交接](../handoff/2026-11-13-聊天提示词核心回归试跑.md) |
 | 2026-11-13 | Windows 本机：`test_blocks`、`test_odds` 与 `test_chat` 中除 `RouteTests` 外的类，加 `prompt check` | `Ran 50 tests / OK`，`check` 输出“通过”；`RouteTests` 8 项因本机缺 tzdata 未跑（另见 PR #3）。另用模拟模型调用按 `eval_cases.md` 的快照用法走了一次 `service.chat`，确认北京时间为 09:00、选场只含所选平台、`chat_method_v2` 已拼入；未调用真实模型，回归用例未跑 |
+| 2026-11-13 | 合并功能块分数口径（PR #4）后，同上命令 | `Ran 60 tests / OK`（功能块 41 + 盘口 6 + 聊天 13），`check` 输出“通过”；`RouteTests` 仍未跑 |
 
 已有启动命令是根目录 `make backend`；服务启动后可请求 `http://127.0.0.1:8000/api/v1/health`。配置、命令与依赖条件见 [README](../../README.md)，本轮复用了已运行的本地服务。
 
@@ -100,16 +101,17 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 
 | 源码 | 关键符号 | 用途 |
 | --- | --- | --- |
-| [registry.py](../../backend/app/services/analysis/registry.py) | `load_blocks` / `load_block` / `load_shared` / `BlockDefinitionError` | 读取定义并做 L1 自检：成对文件、三处版本号、五个二级标题、schema 合法且 `required` 覆盖全部字段、`additionalProperties: false`、指标名规范且写进 `.md`、已登记业务规则 |
-| [checks.py](../../backend/app/services/analysis/checks.py) | `prepare_input` / `check_reply` / `PacketError` | L2：只收本块指标，比赛信息只收四个字段，混入盘口或其他指标即报错；非有限数字算缺失不补值。L3：只容忍外层代码块，拒收 NaN，jsonschema 一次收集全部错误。L3 不过不跑 L4 |
-| [rules.py](../../backend/app/services/analysis/rules.py) | `RULES` / `BlockRules` / `common_warnings` | L4：实力块方向与分差符号矛盾、中性却非 0 判错误；缺失项漏报/误报、理由数字找不到来源判警告；`margin_pts - elo_margin` 只记录 |
+| [registry.py](../../backend/app/services/analysis/registry.py) | `load_blocks` / `load_block` / `load_shared` / `BlockDefinitionError` / `BlockDefinition.markets` | 读取定义并做 L1 自检：成对文件、三处版本号、五个二级标题、schema 合法且 `required` 覆盖全部字段、`additionalProperties: false`、只用约定字段且每种玩法字段齐全（分数基准、修正二选一）、指标名规范且写进 `.md`、已登记业务规则；`insufficient_output` 按 schema 生成“数据不足”输出 |
+| [checks.py](../../backend/app/services/analysis/checks.py) | `prepare_input` / `check_reply` / `PacketError` | L2：只收本块指标，比赛信息只收四个字段，混入盘口或其他指标即报错；非有限数字算缺失不补值。L3：只容忍外层代码块，拒收 NaN，jsonschema 一次收集全部错误。L3 不过不跑 L4；L4 先跑通用的 `market_errors` 再跑本块规则 |
+| [rules.py](../../backend/app/services/analysis/rules.py) | `MARKETS` / `market_errors` / `insufficient_output` / `RULES` / `BlockRules` / `common_warnings` | L4：所有块的方向与分数符号矛盾（基准总分不查符号）、中性却非 0 判错误；缺失项漏报/误报、理由数字找不到来源判警告；实力块季初（少于 10 场或场次缺失）把握大于 50 判警告，阈值暂定；`margin_pts - elo_margin` 只记录 |
 | [assemble.py](../../backend/app/services/analysis/assemble.py) | `assemble` / `correction_message` | 指令放 `instructions`，数据包放用户消息 `<game_data>`；`<` 转义防伪造结束标签；记录指令与数据的 SHA-256 及 shared 文件哈希 |
 | [runner.py](../../backend/app/services/analysis/runner.py) | `run_block` / `BlockRun` | 缺核心指标不调用模型，记 `skipped`；有错误纠正一次，仍错为 `invalid`；只有警告不纠正；`ModelError` 不重试；默认复用 `request_model` |
 | [report.py](../../backend/app/services/analysis/report.py) | `CheckReport` / `Issue` | 状态 ok / warning / invalid / skipped；只有前两种 `usable` |
 
-- 当前只有 [strength_v1](../../backend/app/prompts/blocks/strength_v1.md) 一个草稿块，指标名暂定，等指标程序完成后对齐。
+- 当前只有实力块一个草稿块：[strength_v2](../../backend/app/prompts/blocks/strength_v2.md) 为样板，只输出让分，`reasons` 排在最前；旧版 strength_v1 保留，仍通过自检。指标名暂定，等指标程序完成后对齐。
 - 尚未调用：`run_block` 没有接口、脚本或任务入口；结果不落盘，CSV 与原始 JSON 记录待批量脚本实现。
-- [test_blocks.py](../../backend/tests/test_blocks.py) 31 项覆盖 L1 坏文件（临时目录）、L2、L3、L4、拼装隔离与哈希、标签注入、纠正流程与跳过；全部离线。
+- [test_blocks.py](../../backend/tests/test_blocks.py) 41 项覆盖 L1 坏文件（临时目录，含玩法字段不全、分数口径二选一、未约定字段）、L2、L3、L4（含修正分数与总分符号、季初警告）、拼装隔离与哈希、标签注入、纠正流程与跳过；全部离线。
+- 分数口径与把握刻度写在 [glossary.md](../../backend/app/prompts/shared/glossary.md)：`*_pts` 是完整基准，`*_adj_pts` 是修正，汇总时相加；把握分 0 / 低 / 中 / 高四档。改 shared 会改变所有块的提示词哈希。
 
 ## 聊天提示词增量（2026-11-13）
 

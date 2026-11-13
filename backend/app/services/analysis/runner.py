@@ -54,7 +54,7 @@ async def run_block(
     prepared = prepare_input(block, game, metrics)
     run = BlockRun(block=block.id, version=block.version, packet=prepared.packet, report=skipped_report(prepared))
     if not prepared.ready:
-        run.output = block.rules.insufficient_output(prepared.packet["missing"])
+        run.output = block.insufficient_output(prepared.packet["missing"])
         return run
 
     run.prompt = assemble(block, shared, prepared.packet)
