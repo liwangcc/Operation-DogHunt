@@ -6,9 +6,9 @@
 | --- | --- |
 | 模块标识 | backend |
 | 核对日期 | 2026-11-13（Asia/Shanghai） |
-| 核对范围 | 当日增量：功能块分数口径与 strength_v2（见“功能块框架增量”末尾）；功能块提示词目录、`services/analysis` 读取与检查框架、jsonschema 依赖与离线测试；聊天提示词迁到 `prompts/chat/` 并加锁文件检查（见“聊天提示词增量”）；盘口代码未改，沿用 2026-11-11 核对 |
+| 核对范围 | 当日增量：功能块分数口径与 strength_v2（见“功能块框架增量”末尾）；功能块提示词目录、`services/analysis` 读取与检查框架、jsonschema 依赖与离线测试；聊天提示词迁到 `prompts/chat/` 并加锁文件检查，随后 `chat_method_v2` 与固定回归快照（均见“聊天提示词增量”）；盘口代码未改，沿用 2026-11-11 核对 |
 | 实现状态 | 部分实现：真实聊天每次读取保存盘口，支持单场单平台；功能块框架可读取、拼装、检查并纠正一次，但只有草稿实力块（当前样板 strength_v2）且无调用入口；正式预测保存、记忆和任务恢复未实现 |
-| 验证程度 | 2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；分数口径改动后功能块 41 项、盘口 6 项在 Windows 上通过，聊天测试此环境缺 tzdata 未跑；新聊天提示词与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
+| 验证程度 | 2026-11-13 离线测试 57 项通过（原 19 项 + 功能块 31 项 + 聊天提示词 7 项）；分数口径与 `chat_method_v2` 两项改动合并后，Windows 本机跑 60 项通过（`RouteTests` 未跑，见验证记录）；`chat_method_v2` 与功能块均未做真实模型调用；聊天真实问答为 2026-11-11 旧提示词的历史验证 |
 
 ## 负责什么
 
@@ -44,7 +44,7 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 | GPT 中转连接 | 已实现：Responses 流式接口、完整结果校验、总超时和错误脱敏，不自动重试、不跟随重定向 | [llm.py](../../backend/app/integrations/llm.py) |
 | 数据库和持久化 | 未选定数据库、未建表，仅预留目录 | [db](../../backend/app/db/__init__.py)、[models](../../backend/app/models/__init__.py)、[repositories](../../backend/app/repositories/__init__.py) |
 | 任务、超时恢复、定期维护 | 仅预留，没有后台任务 | [tasks](../../backend/app/tasks/__init__.py) |
-| 聊天测试 | 20 项 unittest 离线验证，包括盘口上下文、选场平台隔离、过期选择、输入、半截流、异常与并发，以及提示词锁文件与改版记录检查；不消耗真实额度 | [test_chat.py](../../backend/tests/test_chat.py) |
+| 聊天测试 | 21 项 unittest 离线验证，包括盘口上下文、选场平台隔离、过期选择、输入、半截流、异常与并发，提示词锁文件与改版记录检查，以及回归用例引用的固定快照可用；不消耗真实额度 | [test_chat.py](../../backend/tests/test_chat.py) |
 
 ## 验证记录
 
@@ -56,6 +56,8 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 | 2026-11-13 | `cd backend && .venv/bin/python -m unittest discover -s tests` | `Ran 50 tests in 0.081s / OK`；功能块全部用模拟模型调用，未消耗额度 |
 | 2026-11-13 | 同上，加 `.venv/bin/python -m app.services.chat.prompt check` | `Ran 57 tests in 0.115s / OK`；`check` 输出“通过”；聊天提示词迁移后未做真实模型调用 |
 | 2026-11-13 | 直接调用 `services.chat.service.chat` 跑 4 条核心回归用例（真实模型，已过期的保存快照，未刷新盘口） | 原期望下 3 条通过，E-002 未列报价；放宽期望后 4 条通过；输入 14476 / 输出 1164 tokens；未经 HTTP 与网页。详见 [试跑交接](../handoff/2026-11-13-聊天提示词核心回归试跑.md) |
+| 2026-11-13 | Windows 本机：`test_blocks`、`test_odds` 与 `test_chat` 中除 `RouteTests` 外的类，加 `prompt check` | `Ran 50 tests / OK`，`check` 输出“通过”；`RouteTests` 8 项因本机缺 tzdata 未跑（另见 PR #3）。另用模拟模型调用按 `eval_cases.md` 的快照用法走了一次 `service.chat`，确认北京时间为 09:00、选场只含所选平台、`chat_method_v2` 已拼入；未调用真实模型，回归用例未跑 |
+| 2026-11-13 | 合并功能块分数口径（PR #4）后，同上命令 | `Ran 60 tests / OK`（功能块 41 + 盘口 6 + 聊天 13），`check` 输出“通过”；`RouteTests` 仍未跑 |
 
 已有启动命令是根目录 `make backend`；服务启动后可请求 `http://127.0.0.1:8000/api/v1/health`。配置、命令与依赖条件见 [README](../../README.md)，本轮复用了已运行的本地服务。
 
@@ -117,13 +119,15 @@ FastAPI 是提供后端接口的 Python 框架。后端提供连通检查、中�
 
 | 源码或文件 | 关键符号 | 用途 |
 | --- | --- | --- |
-| [prompts/chat/](../../backend/app/prompts/chat/README.md) | `chat_{role,sources,odds,method,output}_v1.md` | 静态提示词，按此顺序拼装；第一行版本标识与文件名一致 |
+| [prompts/chat/](../../backend/app/prompts/chat/README.md) | `chat_{role,sources,odds,method,output}_v{n}.md` | 静态提示词，按此顺序拼装；第一行版本标识与文件名一致；当前 method 为 v2，其余为 v1 |
 | [versions.lock.json](../../backend/app/prompts/chat/versions.lock.json) | `active` / `files` / `static_sha256` | 当前版本、各版本哈希与字数；只由命令生成 |
 | [prompt.py](../../backend/app/services/chat/prompt.py) | `build` / `static_prompt` / `check` / `update_lock` / `main` | 读取与拼装（进程内缓存，改文件需重启）；`check` 核对哈希、未登记文件、旧版本被改或删、`CHANGELOG.md` 条目；`lock` 拒绝改写已登记版本 |
 | [service.py](../../backend/app/services/chat/service.py) | `chat` | 静态提示词 + 北京时间 + 快照；日志记录版本与哈希前 12 位；文件和锁不一致只记警告，锁缺失或损坏返回 503 且不调用模型 |
-| [CHANGELOG.md](../../backend/app/prompts/chat/CHANGELOG.md)、[issues.md](../../backend/app/prompts/chat/issues.md)、[eval_cases.md](../../backend/app/prompts/chat/eval_cases.md) | — | 改版记录、问题记录、6 条回归用例；回归用例的固定快照位置未定 |
+| [CHANGELOG.md](../../backend/app/prompts/chat/CHANGELOG.md)、[issues.md](../../backend/app/prompts/chat/issues.md)、[eval_cases.md](../../backend/app/prompts/chat/eval_cases.md) | — | 改版记录、问题记录、6 条回归用例；每条用例注明所用快照 |
+| [eval_snapshots/](../../backend/app/prompts/chat/eval_snapshots/S-001.json) | `_eval.now` / `_eval.selection` | 回归用的固定盘口快照，格式同保存快照；`S-001` 为合成数据，不是真实报价；`prompt.py` 只读 `chat_*.md`，不受影响 |
 
 - 原 service.py 中的盘口规则迁入 `chat_odds_v1`，意思不变；新增资料等级、分析方法和预测模板会改变回答风格；2026-11-13 已真实试跑核心用例，结果见验证记录。
+- `chat_method_v2`（I-001）：缺资料本身不再构成观望理由，只降低把握并写进缺失资料与风险；观望时要说明原因。改版后未真实试跑，效果待回归验证。
 - 漏记录的手动修改由 `test_repository_prompts_are_recorded` 拦下；未装 Git 提交前检查（用户确认）。
 - 本仓库此前没有日志配置，`logger.info` 是否出现在 uvicorn 输出中取决于运行时日志级别，未核对。
 

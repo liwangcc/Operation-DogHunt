@@ -11,7 +11,7 @@
 | 1 | role | `chat_role_v1` | 角色与能力边界 |
 | 2 | sources | `chat_sources_v1` | A/B/C 资料等级 |
 | 3 | odds | `chat_odds_v1` | 盘口与报价规则 |
-| 4 | method | `chat_method_v1` | 分析方法 |
+| 4 | method | `chat_method_v2` | 分析方法 |
 | 5 | output | `chat_output_v1` | 输出模板、把握分档、追问 |
 
 拼装：五个文件按上表顺序用空行连接，再由 `service.py` 追加当前北京时间、快照说明和 `<saved_odds_snapshot>`。时间和快照不进静态哈希。后端进程只读一次文件，改完要重启后端。
@@ -24,6 +24,7 @@
 | `CHANGELOG.md` | 改版记录 |
 | `issues.md` | 使用中发现的问题 |
 | `eval_cases.md` | 回归问题集 |
+| `eval_snapshots/` | 回归用的固定盘口快照，用法见 `eval_cases.md` |
 
 ## 修改方法
 

@@ -1,0 +1,78 @@
+{
+  "_eval": {
+    "note": "合成数据，不是真实报价。只用于聊天提示词回归，格式与 data/odds/*/snapshot.json 相同；程序读取盘口时会忽略本字段。",
+    "now": "2026-11-14T01:00:00Z",
+    "selection": {"event_id": "s001-lal-den", "bookmaker_key": "draftkings"}
+  },
+  "fetched_at": "2026-11-14T00:50:00Z",
+  "quota": {"last": "2", "remaining": "480"},
+  "raw_events": [
+    {
+      "id": "s001-nyk-bos",
+      "sport_key": "basketball_nba",
+      "commence_time": "2026-11-14T00:30:00Z",
+      "home_team": "Boston Celtics",
+      "away_team": "New York Knicks",
+      "bookmakers": [
+        {"key": "draftkings", "title": "DraftKings", "markets": [
+          {"key": "spreads", "last_update": "2026-11-14T00:25:00Z", "outcomes": [
+            {"name": "Boston Celtics", "point": -4.5, "price": 1.91},
+            {"name": "New York Knicks", "point": 4.5, "price": 1.91}
+          ]},
+          {"key": "totals", "last_update": "2026-11-14T00:25:00Z", "outcomes": [
+            {"name": "Over", "point": 224.5, "price": 1.91},
+            {"name": "Under", "point": 224.5, "price": 1.91}
+          ]}
+        ]}
+      ]
+    },
+    {
+      "id": "s001-lal-den",
+      "sport_key": "basketball_nba",
+      "commence_time": "2026-11-14T03:00:00Z",
+      "home_team": "Denver Nuggets",
+      "away_team": "Los Angeles Lakers",
+      "bookmakers": [
+        {"key": "draftkings", "title": "DraftKings", "markets": [
+          {"key": "spreads", "last_update": "2026-11-14T00:45:00Z", "outcomes": [
+            {"name": "Denver Nuggets", "point": -6.5, "price": 1.87},
+            {"name": "Los Angeles Lakers", "point": 6.5, "price": 1.95}
+          ]},
+          {"key": "totals", "last_update": "2026-11-14T00:45:00Z", "outcomes": [
+            {"name": "Over", "point": 231.5, "price": 1.91},
+            {"name": "Under", "point": 231.5, "price": 1.91}
+          ]}
+        ]},
+        {"key": "fanduel", "title": "FanDuel", "markets": [
+          {"key": "spreads", "last_update": "2026-11-14T00:40:00Z", "outcomes": [
+            {"name": "Denver Nuggets", "point": -7.0, "price": 1.91},
+            {"name": "Los Angeles Lakers", "point": 7.0, "price": 1.91}
+          ]},
+          {"key": "totals", "last_update": "2026-11-14T00:40:00Z", "outcomes": [
+            {"name": "Over", "point": 230.5, "price": 1.89},
+            {"name": "Under", "point": 230.5, "price": 1.93}
+          ]}
+        ]}
+      ]
+    },
+    {
+      "id": "s001-mia-phx",
+      "sport_key": "basketball_nba",
+      "commence_time": "2026-11-14T03:00:00Z",
+      "home_team": "Phoenix Suns",
+      "away_team": "Miami Heat",
+      "bookmakers": [
+        {"key": "fanduel", "title": "FanDuel", "markets": [
+          {"key": "spreads", "last_update": "2026-11-14T00:42:00Z", "outcomes": [
+            {"name": "Phoenix Suns", "point": -2.0, "price": 1.91},
+            {"name": "Miami Heat", "point": 2.0, "price": 1.91}
+          ]},
+          {"key": "totals", "last_update": "2026-11-14T00:42:00Z", "outcomes": [
+            {"name": "Over", "point": 219.0, "price": 1.91},
+            {"name": "Under", "point": 219.0, "price": 1.91}
+          ]}
+        ]}
+      ]
+    }
+  ]
+}
