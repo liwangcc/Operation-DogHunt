@@ -1,0 +1,33 @@
+{
+  "active": [
+    "chat_role_v1",
+    "chat_sources_v1",
+    "chat_odds_v1",
+    "chat_method_v1",
+    "chat_output_v1"
+  ],
+  "files": {
+    "chat_method_v1": {
+      "sha256": "3859398df22f1515c7b9ae5c1abebdc6cd36d572a7ba14c3625ecdd533c867a5",
+      "chars": 526
+    },
+    "chat_odds_v1": {
+      "sha256": "f6bb72223b93d16fe2c42160c94cc296e9a6920a049517d1c3988f4edcddc363",
+      "chars": 497
+    },
+    "chat_output_v1": {
+      "sha256": "01a277d874cc285fa2e002ffaec13fbd961e03920983738842b0923e3f82958f",
+      "chars": 749
+    },
+    "chat_role_v1": {
+      "sha256": "c65aab4c4950e9a5a65af469c519d43dfc1e3e4fe2d65bb953fbdd4b7e676ec6",
+      "chars": 246
+    },
+    "chat_sources_v1": {
+      "sha256": "6a7e6096d3e1a125749fb870e6f12f174632c730f4ec7f2cbe1ac4e911ba595f",
+      "chars": 405
+    }
+  },
+  "static_sha256": "38d90fbefca0dea0555b2fe6ad73b11d2bf55dc3413d25f4fd0e488a3717dd77",
+  "static_chars": 2427
+}

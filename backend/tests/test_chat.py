@@ -2,7 +2,10 @@
 
 import asyncio
 import json
+import shutil
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 import httpx
@@ -12,6 +15,7 @@ from app.integrations.llm import ModelError, request_model
 from app.main import create_app
 from app.schemas.chat import ChatMessage, ChatResponse
 from app.schemas.odds import OddsBoard
+from app.services.chat import prompt as chat_prompt
 from app.services.odds.board import build_board
 from test_odds import snapshot
 
@@ -161,6 +165,9 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(context["events"][0]["bookmakers"][0]["markets"][0]["outcomes"][0]["point"], 7.5)
             self.assertIn("独立", instructions)
             self.assertIn("15 分钟", instructions)
+            self.assertTrue(instructions.startswith(chat_prompt.static_prompt().text))
+            self.assertTrue(instructions.endswith("</saved_odds_snapshot>"))
+            self.assertIn("当前北京时间", instructions.split(chat_prompt.static_prompt().text, 1)[1])
             # 下一次发送必须重新读数据；没有快照时仍可普通聊天，并如实传入不可用状态。
             self.read_board.return_value = OddsBoard(status="unavailable", message="快照损坏")
             response = await self.client.post("/api/v1/chat", json=payload)
@@ -196,6 +203,14 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status_code, expected)
         call.assert_not_called()
 
+    async def test_broken_prompt_files_return_503_without_calling_model(self):
+        with patch("app.services.chat.service.static_prompt", side_effect=chat_prompt.ChatPromptError("缺少 versions.lock.json")), \
+             patch("app.services.chat.service.request_model", new_callable=AsyncMock) as call:
+            response = await self.client.post("/api/v1/chat", json={"messages": [{"role": "user", "content": "测试"}]})
+        self.assertEqual(response.status_code, 503)
+        self.assertNotIn("versions.lock", response.text)
+        call.assert_not_called()
+
     async def test_one_request_at_a_time_and_recovers_after_completion(self):
         entered, release = asyncio.Event(), asyncio.Event()
 
@@ -213,6 +228,74 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
             release.set()
             self.assertEqual((await task).status_code, 200)
             self.assertEqual((await self.client.post("/api/v1/chat", json=payload)).status_code, 200)
+
+
+class ChatPromptTests(unittest.TestCase):
+    """聊天提示词文件、锁文件与改版记录；在临时目录造坏文件，不改仓库里的文件。"""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.dir = self.tmp / "chat"
+        shutil.copytree(chat_prompt.CHAT_DIR, self.dir)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def write(self, name, text):
+        (self.dir / name).write_text(text, encoding="utf-8")
+
+    def test_repository_prompts_are_recorded(self):
+        # 失败说明提示词被修改但没有记录：运行 $chat-prompt-maintenance。
+        self.assertEqual(chat_prompt.check(), [])
+        self.assertTrue(chat_prompt.build().locked)
+
+    def test_assembly_order_and_stable_hash(self):
+        built = chat_prompt.build(self.dir)
+        self.assertEqual([v.split("_")[1] for v in built.versions], list(chat_prompt.MODULES))
+        heads = [built.text.index(f"# {v}\n") for v in built.versions]
+        self.assertEqual(heads, sorted(heads))
+        self.assertEqual(chat_prompt.build(self.dir).sha256, built.sha256)
+        self.assertNotIn("{now}", built.text)
+        self.assertNotIn("<saved_odds_snapshot>", built.text)
+
+    def test_edit_without_record_fails(self):
+        path = self.dir / "chat_method_v1.md"
+        self.write(path.name, path.read_text(encoding="utf-8") + "新增一句。\n")
+        problems = chat_prompt.check(self.dir)
+        self.assertTrue(any("chat_method_v1.md" in p and "chat-prompt-maintenance" in p for p in problems))
+        self.assertFalse(chat_prompt.build(self.dir).locked)
+        with self.assertRaises(chat_prompt.ChatPromptError):
+            chat_prompt.update_lock(self.dir)  # 已登记版本不能改写哈希
+
+    def test_new_version_must_be_locked_and_logged(self):
+        old = (self.dir / "chat_method_v1.md").read_text(encoding="utf-8")
+        self.write("chat_method_v2.md", old.replace("# chat_method_v1", "# chat_method_v2") + "新增一句。\n")
+        self.assertTrue(any("chat_method_v2.md" in p and "未登记" in p for p in chat_prompt.check(self.dir)))
+        active = ["chat_role_v1", "chat_sources_v1", "chat_odds_v1", "chat_method_v2", "chat_output_v1"]
+        chat_prompt.update_lock(self.dir, active)
+        self.assertEqual(chat_prompt.check(self.dir), ["chat_method_v2：CHANGELOG.md 里没有 `### chat_method_v2` 条目"])
+        with (self.dir / "CHANGELOG.md").open("a", encoding="utf-8") as f:
+            f.write("\n### chat_method_v2（替换 chat_method_v1）\n- 测试\n")
+        self.assertEqual(chat_prompt.check(self.dir), [])
+        self.assertEqual(chat_prompt.build(self.dir).versions[3], "chat_method_v2")
+
+    def test_header_order_and_deleted_old_version(self):
+        path = self.dir / "chat_role_v1.md"
+        self.write(path.name, path.read_text(encoding="utf-8").replace("# chat_role_v1", "# chat_role_v2", 1))
+        self.assertTrue(any("第一行" in p for p in chat_prompt.check(self.dir)))
+        with self.assertRaises(chat_prompt.ChatPromptError):
+            chat_prompt.build(self.dir)
+        shutil.copytree(chat_prompt.CHAT_DIR, self.dir, dirs_exist_ok=True)
+        with self.assertRaises(chat_prompt.ChatPromptError):
+            chat_prompt.update_lock(self.dir, ["chat_sources_v1", "chat_role_v1", "chat_odds_v1", "chat_method_v1", "chat_output_v1"])
+        (self.dir / "chat_odds_v1.md").unlink()
+        self.assertTrue(any("旧版本不能删除" in p for p in chat_prompt.check(self.dir)))
+
+    def test_missing_lock_is_reported(self):
+        (self.dir / "versions.lock.json").unlink()
+        self.assertTrue(chat_prompt.check(self.dir)[0].startswith("缺少 versions.lock.json"))
+        with self.assertRaises(chat_prompt.ChatPromptError):
+            chat_prompt.build(self.dir)
 
 
 if __name__ == "__main__":
