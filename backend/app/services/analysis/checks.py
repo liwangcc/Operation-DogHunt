@@ -9,6 +9,7 @@ from typing import Any
 
 from app.services.analysis.registry import BlockDefinition
 from app.services.analysis.report import CheckReport, Issue, status_of
+from app.services.analysis.rules import market_errors
 
 GAME_FIELDS = ("game_id", "home", "away", "tipoff_utc")
 _FENCE = re.compile(r"^```(?:json)?\s*\n(.*)\n```$", re.S)
@@ -92,10 +93,11 @@ def check_reply(block: BlockDefinition, prepared: PreparedInput, text: str) -> t
     if errors:
         return None, CheckReport(status="invalid", errors=errors, observations=observations)
     result = block.rules.check(output, prepared.packet)
+    errors = market_errors(output, block.markets) + result.errors
     observations.update(result.observations)
     report = CheckReport(
-        status=status_of(result.errors, result.warnings),
-        errors=result.errors,
+        status=status_of(errors, result.warnings),
+        errors=errors,
         warnings=result.warnings,
         observations=observations,
     )
