@@ -133,6 +133,9 @@ class RouteTests(unittest.IsolatedAsyncioTestCase):
         schedule = patch("app.services.chat.service.load_schedule", return_value=None)
         schedule.start()
         self.addCleanup(schedule.stop)
+        injuries = patch("app.services.chat.service.load_injuries", return_value=None)
+        injuries.start()
+        self.addCleanup(injuries.stop)
 
     async def asyncTearDown(self):
         await self.client.aclose()
@@ -262,6 +265,9 @@ class StreamTests(unittest.IsolatedAsyncioTestCase):
         schedule = patch("app.services.chat.service.load_schedule", return_value=None)
         schedule.start()
         self.addCleanup(schedule.stop)
+        injuries = patch("app.services.chat.service.load_injuries", return_value=None)
+        injuries.start()
+        self.addCleanup(injuries.stop)
 
     async def asyncTearDown(self):
         await self.client.aclose()
@@ -338,6 +344,25 @@ class FocusTests(unittest.TestCase):
         self.assertEqual((game["away"]["rest_days"], game["away"]["back_to_back"]), (0, True))
         self.assertEqual((game["home"]["rest_days"], game["home"]["rest_days_at_least"]), (None, 5))
         self.assertEqual(json.loads(odds_context(board, None, ask))["schedule_rest"]["status"], "unavailable")
+
+    def test_team_form_and_injuries_follow_focused_events(self):
+        board = build_board(snapshot())  # 猛龙主场对凯尔特人，美国东部日期 2026-11-11
+        record = {"provider": "BALLDONTLIE", "fetched_at": "2026-11-11T12:00:00Z", "dates": ["2026-11-09", "2026-11-10", "2026-11-11"], "form_from": "2026-10-12", "games": [
+            {"id": 1, "date": "2026-11-09", "home": "Toronto Raptors", "away": "Miami Heat", "status": "Final", "home_score": 110, "away_score": 100},
+            {"id": 2, "date": "2026-11-10", "home": "Boston Celtics", "away": "Toronto Raptors", "status": "Final", "home_score": 120, "away_score": 118},
+            {"id": 3, "date": "2026-11-11", "home": "Toronto Raptors", "away": "Boston Celtics", "status": ""}]}
+        injuries = {"provider": "ESPN", "fetched_at": "2026-11-11T12:00:00Z", "teams": {"Boston Celtics": [{"player": "A", "status": "Out"}]}}
+        ask = [ChatMessage(role="user", content="猛龙这场")]
+        context = json.loads(odds_context(board, None, ask, None, record, injuries))
+        game = context["team_form"]["events"]["game"]
+        self.assertEqual((game["home"]["games"], game["home"]["wins"], game["home"]["avg_margin"]), (2, 1, 4.0))
+        self.assertEqual((game["away"]["games"], game["away"]["avg_margin"], game["home_minus_away_avg_margin"]), (1, 2.0, 2.0))
+        hurt = context["injuries"]["events"]["game"]
+        self.assertEqual((hurt["away"]["listed"], hurt["away"]["players"][0]["player"], hurt["home"]["listed"]), (True, "A", False))
+        empty = json.loads(odds_context(board, None, ask))
+        self.assertEqual((empty["team_form"]["status"], empty["injuries"]["status"]), ("unavailable", "unavailable"))
+        whole = json.loads(odds_context(board, None, [ChatMessage(role="user", content="今天有什么比赛")], None, record, injuries))
+        self.assertEqual((whole["team_form"]["status"], whole["injuries"]["status"]), ("available", "available"))  # 只有 1 场，仍算少数比赛
 
 
 class ChatPromptTests(unittest.TestCase):
@@ -433,6 +458,38 @@ class EvalSnapshotTests(unittest.TestCase):
                 context = json.loads(odds_context(board, selection))
                 self.assertEqual([e["id"] for e in context["events"]], [selection.event_id])
                 self.assertNotIn("_eval", context)
+
+    def test_d001_matches_numbers_in_cases(self):
+        from app.services.odds.injuries import load_injuries
+        from app.services.odds.schedule import load_schedule
+        folder = chat_prompt.CHAT_DIR / "eval_snapshots"
+        data = json.loads((folder / "D-001.json").read_text(encoding="utf-8"))
+        snap = json.loads((folder / f"{data['_eval']['for']}.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as directory:  # 和真实文件走同一个读取校验
+            root = Path(directory)
+            for name in ("schedule", "injuries"):
+                (root / name / "x").mkdir(parents=True)
+                (root / name / "x" / f"{name}.json").write_text(json.dumps(data[name]), encoding="utf-8")
+            schedule, injuries = load_schedule(root / "schedule"), load_injuries(root / "injuries")
+        self.assertIsNotNone(schedule)
+        self.assertIsNotNone(injuries)
+        now = datetime.fromisoformat(snap["_eval"]["now"].replace("Z", "+00:00"))
+        # 盘口与伤病共用固定快照时钟，避免样例在真实时间超过 12 小时后无故失败。
+        with patch("app.services.odds.injuries.datetime", wraps=datetime) as clock:
+            clock.now.return_value = now
+            context = json.loads(odds_context(build_board(snap, now), OddsSelection(**snap["_eval"]["selection"]), None, [], schedule, injuries))
+        form = context["team_form"]["events"]["s001-lal-den"]
+        self.assertEqual([(form[k]["games"], form[k]["avg_margin"], form[k]["avg_game_total"]) for k in ("home", "away")], [(9, 6.0, 232.0), (10, -1.0, 236.0)])
+        self.assertEqual(form["home_minus_away_avg_margin"], 7.0)
+        self.assertEqual(context["market_signals"]["s001-lal-den"]["spread"]["consensus_home_point"], -6.75)
+        self.assertEqual(context["market_signals"]["s001-lal-den"]["total"]["consensus"], 231.0)
+        rest = context["schedule_rest"]["events"]["s001-lal-den"]
+        self.assertEqual((rest["home"]["rest_days"], rest["away"]["back_to_back"]), (2, True))
+        hurt = context["injuries"]
+        self.assertFalse(hurt["stale"])
+        lakers = {p["player"]: p for p in hurt["events"]["s001-lal-den"]["away"]["players"]}
+        self.assertGreater(lakers["Lakers Guard A"]["reported"], form["away"]["last_game"])  # 新伤病
+        self.assertLess(lakers["Lakers Center B"]["reported"], data["schedule"]["form_from"])  # 已在战绩里
 
 
 if __name__ == "__main__":

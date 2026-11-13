@@ -1,6 +1,6 @@
-"""BALLDONTLIE 免费档赛程（/v1/games）。Key 只放项目根目录 .env.local，不进入日志和接口响应。
+"""BALLDONTLIE 免费档赛程与比分（/v1/games）。Key 只放项目根目录 .env.local，不进入日志和接口响应。
 
-免费档限 5 次/分钟；本模块不自动重试，翻页最多 MAX_PAGES 次。
+免费档限 5 次/分钟；本模块不自动重试，翻页最多 MAX_PAGES 次（近 30 天约 220 场，每页 100 场）。
 """
 
 import os
@@ -11,7 +11,7 @@ from app.integrations.odds import PROJECT_ROOT
 
 ENDPOINT = "https://api.balldontlie.io/v1/games"
 KEY_NAME = "BALLDONTLIE_API_KEY"
-MAX_PAGES = 3
+MAX_PAGES = 4
 TIMEOUT_SECONDS = 10
 
 
@@ -66,4 +66,4 @@ def fetch_games(key: str, dates: list[str]) -> list[dict]:
             cursor = (payload.get("meta") or {}).get("next_cursor")
             if not cursor:
                 return games
-    raise ScheduleError(f"赛程超过 {MAX_PAGES} 页，本次不保存，避免不完整的休息天数。")
+    raise ScheduleError(f"赛程超过 {MAX_PAGES} 页，本次不保存，避免不完整的休息天数和战绩。")

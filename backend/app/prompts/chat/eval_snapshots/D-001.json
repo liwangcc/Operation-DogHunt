@@ -1,0 +1,261 @@
+{
+  "_eval": {
+    "note": "合成数据，不是真实赛程、比分和伤病。配合 S-001 使用：schedule 替换 load_schedule，injuries 替换 load_injuries。只列了湖人、掘金两队的比赛，其他球队的战绩为 0 场；球员名为虚构。",
+    "for": "S-001"
+  },
+  "schedule": {
+    "provider": "BALLDONTLIE",
+    "fetched_at": "2026-11-14T00:30:00Z",
+    "dates": [
+      "2026-10-14",
+      "2026-10-15",
+      "2026-10-16",
+      "2026-10-17",
+      "2026-10-18",
+      "2026-10-19",
+      "2026-10-20",
+      "2026-10-21",
+      "2026-10-22",
+      "2026-10-23",
+      "2026-10-24",
+      "2026-10-25",
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01",
+      "2026-11-02",
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05",
+      "2026-11-06",
+      "2026-11-07",
+      "2026-11-08",
+      "2026-11-09",
+      "2026-11-10",
+      "2026-11-11",
+      "2026-11-12",
+      "2026-11-13"
+    ],
+    "form_from": "2026-10-14",
+    "games": [
+      {
+        "id": 1,
+        "date": "2026-10-22",
+        "home": "Los Angeles Lakers",
+        "away": "Golden State Warriors",
+        "status": "Final",
+        "home_score": 116,
+        "away_score": 122
+      },
+      {
+        "id": 11,
+        "date": "2026-10-23",
+        "home": "Denver Nuggets",
+        "away": "Minnesota Timberwolves",
+        "status": "Final",
+        "home_score": 120,
+        "away_score": 110
+      },
+      {
+        "id": 2,
+        "date": "2026-10-24",
+        "home": "Sacramento Kings",
+        "away": "Los Angeles Lakers",
+        "status": "Final",
+        "home_score": 118,
+        "away_score": 122
+      },
+      {
+        "id": 12,
+        "date": "2026-10-25",
+        "home": "Chicago Bulls",
+        "away": "Denver Nuggets",
+        "status": "Final",
+        "home_score": 120,
+        "away_score": 116
+      },
+      {
+        "id": 3,
+        "date": "2026-10-26",
+        "home": "Los Angeles Lakers",
+        "away": "Houston Rockets",
+        "status": "Final",
+        "home_score": 110,
+        "away_score": 120
+      },
+      {
+        "id": 13,
+        "date": "2026-10-27",
+        "home": "Denver Nuggets",
+        "away": "Charlotte Hornets",
+        "status": "Final",
+        "home_score": 118,
+        "away_score": 110
+      },
+      {
+        "id": 4,
+        "date": "2026-10-28",
+        "home": "Portland Trail Blazers",
+        "away": "Los Angeles Lakers",
+        "status": "Final",
+        "home_score": 117,
+        "away_score": 119
+      },
+      {
+        "id": 14,
+        "date": "2026-10-29",
+        "home": "Brooklyn Nets",
+        "away": "Denver Nuggets",
+        "status": "Final",
+        "home_score": 114,
+        "away_score": 126
+      },
+      {
+        "id": 5,
+        "date": "2026-10-30",
+        "home": "Los Angeles Lakers",
+        "away": "Utah Jazz",
+        "status": "Final",
+        "home_score": 119,
+        "away_score": 113
+      },
+      {
+        "id": 6,
+        "date": "2026-11-01",
+        "home": "Dallas Mavericks",
+        "away": "Los Angeles Lakers",
+        "status": "Final",
+        "home_score": 125,
+        "away_score": 117
+      },
+      {
+        "id": 15,
+        "date": "2026-11-01",
+        "home": "Denver Nuggets",
+        "away": "New Orleans Pelicans",
+        "status": "Final",
+        "home_score": 115,
+        "away_score": 111
+      },
+      {
+        "id": 16,
+        "date": "2026-11-03",
+        "home": "Atlanta Hawks",
+        "away": "Denver Nuggets",
+        "status": "Final",
+        "home_score": 117,
+        "away_score": 115
+      },
+      {
+        "id": 7,
+        "date": "2026-11-03",
+        "home": "Los Angeles Lakers",
+        "away": "Memphis Grizzlies",
+        "status": "Final",
+        "home_score": 116,
+        "away_score": 112
+      },
+      {
+        "id": 17,
+        "date": "2026-11-05",
+        "home": "Denver Nuggets",
+        "away": "Toronto Raptors",
+        "status": "Final",
+        "home_score": 122,
+        "away_score": 113
+      },
+      {
+        "id": 8,
+        "date": "2026-11-06",
+        "home": "Oklahoma City Thunder",
+        "away": "Los Angeles Lakers",
+        "status": "Final",
+        "home_score": 124,
+        "away_score": 116
+      },
+      {
+        "id": 18,
+        "date": "2026-11-08",
+        "home": "Detroit Pistons",
+        "away": "Denver Nuggets",
+        "status": "Final",
+        "home_score": 109,
+        "away_score": 120
+      },
+      {
+        "id": 9,
+        "date": "2026-11-09",
+        "home": "Los Angeles Lakers",
+        "away": "San Antonio Spurs",
+        "status": "Final",
+        "home_score": 123,
+        "away_score": 115
+      },
+      {
+        "id": 19,
+        "date": "2026-11-10",
+        "home": "Denver Nuggets",
+        "away": "Utah Jazz",
+        "status": "Final",
+        "home_score": 119,
+        "away_score": 113
+      },
+      {
+        "id": 10,
+        "date": "2026-11-12",
+        "home": "Los Angeles Lakers",
+        "away": "Phoenix Suns",
+        "status": "Final",
+        "home_score": 117,
+        "away_score": 119
+      },
+      {
+        "id": 20,
+        "date": "2026-11-13",
+        "home": "Denver Nuggets",
+        "away": "Los Angeles Lakers",
+        "status": "10:00 pm ET"
+      }
+    ]
+  },
+  "injuries": {
+    "provider": "ESPN",
+    "fetched_at": "2026-11-14T00:30:00Z",
+    "teams": {
+      "Los Angeles Lakers": [
+        {
+          "player": "Lakers Guard A",
+          "position": "G",
+          "status": "Out",
+          "reported": "2026-11-13T20:00Z",
+          "injury": "Ankle",
+          "return_date": null,
+          "comment": "Guard A (ankle), the team's leading scorer at 27 points per game, has been ruled out for Friday's game at Denver."
+        },
+        {
+          "player": "Lakers Center B",
+          "position": "C",
+          "status": "Out",
+          "reported": "2026-10-01T18:00Z",
+          "injury": "Knee",
+          "return_date": "2026-12-20",
+          "comment": "Center B (knee) has not played this season and remains on track for a late-December return."
+        }
+      ],
+      "Denver Nuggets": [
+        {
+          "player": "Nuggets Wing C",
+          "position": "F",
+          "status": "Day-To-Day",
+          "reported": "2026-11-13T18:00Z",
+          "injury": "Hamstring",
+          "return_date": null,
+          "comment": "Wing C (hamstring), a bench forward averaging 14 minutes, is questionable for Friday against the Lakers."
+        }
+      ]
+    }
+  }
+}

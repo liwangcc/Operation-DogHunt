@@ -1,21 +1,24 @@
 """查询快照不访问外部服务；手动刷新一次取数，新建快照并保留旧文件。"""
 
 import json
+import logging
 import math
 from datetime import datetime, timezone
 from pathlib import Path
-from threading import Lock
+from threading import Lock, Thread
 from time import monotonic
 
 from app.integrations.odds import PROJECT_ROOT, odds_tool
 from app.schemas.odds import OddsBoard, OddsBookmaker, OddsEvent, OddsMarket, OddsOutcome
-from app.services.odds import schedule
+from app.services.odds import injuries, schedule
 
 SNAPSHOT_ROOT = PROJECT_ROOT / "data" / "odds"
 STALE_SECONDS = 15 * 60
 REFRESH_COOLDOWN = 60
 _refresh_lock = Lock()
+_extras_lock = Lock()
 _last_attempt: float | None = None
+logger = logging.getLogger(__name__)
 
 
 class OddsRefreshError(Exception):
@@ -127,8 +130,29 @@ def refresh_board() -> OddsBoard:
             raise OddsRefreshError(str(error), 502) from None
         except (OSError, ValueError, TypeError, KeyError, AttributeError):
             raise OddsRefreshError("数据格式异常或新快照保存失败，已保留原有快照；本次请求可能已消耗额度。", 502) from None
-        # 盘口已保存；赛程是可选资料，失败只记日志，不影响这次更新的结果。
-        schedule.log_refresh(board.events)
+        # 盘口已保存；赛程、比分和伤病是可选资料，放到后台取，失败只记日志，不影响这次更新的结果。
+        start_extras(board.events)
         return board
     finally:
         _refresh_lock.release()
+
+
+def start_extras(events: list[OddsEvent]) -> Thread | None:
+    """赛程与比分（BALLDONTLIE，最多 4 页）和伤病（ESPN，常要 5 到 15 秒）合计可能超过前端更新的 25 秒超时，所以不等它们。
+
+    上一轮还没结束时跳过本次，避免重复请求触发 BALLDONTLIE 每分钟 5 次的限制。返回线程只为测试等待。
+    """
+    if not _extras_lock.acquire(blocking=False):
+        logger.info("上一轮赛程与伤病更新还没结束，本次跳过")
+        return None
+
+    def run() -> None:
+        try:
+            schedule.log_refresh(events)
+            injuries.log_refresh(events)
+        finally:
+            _extras_lock.release()
+
+    thread = Thread(target=run, name="odds-extras", daemon=True)
+    thread.start()
+    return thread
