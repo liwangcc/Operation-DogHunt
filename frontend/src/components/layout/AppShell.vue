@@ -1,7 +1,6 @@
 <script setup lang="ts">
 // 内页外壳：动态背景、侧边导航、顶部状态条和页面区域；负责在进入系统时做一轮只读的运行状态检查。
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import CommandPalette from './CommandPalette.vue'
 import ShellBackdrop from './ShellBackdrop.vue'
 import StationRail from './StationRail.vue'
@@ -12,9 +11,6 @@ import { checkHealth, checkModel, health, loadBoard, startClock, stopClock } fro
 const RECHECK_AFTER_MS = 60 * 1000
 
 const paletteOpen = ref(false)
-const route = useRoute()
-// 这三页保留原有浅色设计，底色和原生控件也要一起保留。
-const lightPage = computed(() => ['records', 'statistics', 'settings'].includes(String(route.name)))
 
 function onKeydown(event: KeyboardEvent): void {
   if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'k') {
@@ -51,7 +47,7 @@ onBeforeUnmount(() => {
     <StationRail @palette="paletteOpen = true" />
     <div class="deck">
       <StatusStrip />
-      <main id="main-content" :class="{ 'light-page': lightPage }" tabindex="-1"><slot /></main>
+      <main id="main-content" tabindex="-1"><slot /></main>
     </div>
     <CommandPalette v-model:open="paletteOpen" />
   </div>
@@ -61,7 +57,6 @@ onBeforeUnmount(() => {
 .shell { position: relative; z-index: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); min-height: 100dvh; }
 .deck { display: flex; flex-direction: column; min-width: 0; min-height: 100dvh; }
 main { flex: 1; min-width: 0; outline: 0; }
-.light-page { color-scheme: light; color: #203a36; background: #f7f9f7; }
 @media (max-width: 700px) {
   .shell { display: block; }
   /* 给底部的标签栏留出位置。 */

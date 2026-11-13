@@ -6,10 +6,10 @@
 | --- | --- |
 | 模块标识 | frontend |
 | 核对日期 | 2026-11-13（Asia/Shanghai） |
-| 核对范围 | PR #2 增量审查：路由、启动入口与球场生命周期、公共外壳、状态与偏好、聊天、盘口选择和抽屉、记录/统计/设置的样式兼容；未逐个验证所有 3D 材质与动作 |
-| 实现状态 | 部分实现：聊天、比赛与盘口用后端真实数据；预测记录/复盘档案、效果统计为明确标注的演示数据（只在本页内存，不持久化），设置只作本页预览，长期记忆为界面演示；3D 启动页与沙盘比赛可用 |
-| 验证程度 | 本轮类型检查与构建、六页桌面/390px 布局、模拟聊天与选场、示例切回真实、抽屉键盘、无 WebGL 备用入口通过；3D 场景、比赛进入/暂停/退出通过。无头浏览器有 GPU 性能警告，未验证手机实机、真实模型及盘口刷新 |
-| Git 基准 | PR #2 原头 `2e0170e3ef8dd20727609aa565b44bd5948155c2` + 本轮修正；目标 `dev` 基准 `10ea61a`；提交号以 PR 与交接为准 |
+| 核对范围 | 三页切换到深色方案：记录/统计共用演示数据和筛选、详情与导出、设置实际显示偏好、全局演示与公共外壳；未重测 3D 和聊天 |
+| 实现状态 | 部分实现：记录与统计共用沙盘联赛演示记录；设置可保存本机显示偏好并读取运行状态；正式预测、赛果、复盘保存和后台配置管理未实现 |
+| 验证程度 | 本轮类型检查与构建通过（268 modules）；三页 1440px/390px 无整页横向溢出，筛选、CSV 导出、详情键盘、图表键盘、跨页数字一致、偏好刷新保留与演示关闭通过；接口均为模拟，未调用模型或刷新盘口 |
+| Git 基准 | `acce9c3` + 本轮工作区改动；未提交、未推送 |
 ## 负责什么
 
 Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Router 管页面地址之间的切换。前端承担页面布局、运行状态显示、真实模型聊天和本次打开网站时的对话上下文。比赛与盘口在独立 `/matches` 页面，聊天在 `/`；卡片选场后带比赛及平台标识进入聊天，由后端读取报价。预测记录、效果统计、长期记忆三页的界面和计算在前端，数据来源目前只有演示数据。
@@ -42,18 +42,18 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | [shell/backdrop.ts](../../frontend/src/shell/backdrop.ts) / [countUp.ts](../../frontend/src/shell/countUp.ts) | `createBackdrop` / `useCountUp` | 用浏览器自带的 WebGL 画的落雨城市夜景（不引入 three.js）；未接入当前统计页的数字滚动工具 |
 | [stores/system.ts](../../frontend/src/stores/system.ts) | `health` / `model` / `board` / `now` | 各页面共用的运行状态：后端连接、模型是否已配置、最新盘口快照、每秒走一次的时钟；只有 `refreshBoard` 会消耗盘口接口额度 |
 | [stores/preferences.ts](../../frontend/src/stores/preferences.ts) | `preferences` | 保存在浏览器本地的显示偏好：赔率格式、默认报价平台、动态背景、演示数据 |
-| [stores/demo.ts](../../frontend/src/stores/demo.ts) / [records.ts](../../frontend/src/stores/records.ts) | `demoEnabled` / `boardIsDemo` / `shownBoard` / `predictionRecords` | 比赛与记忆的演示开关；predictionRecords 是保留的另一版记录来源，当前 RecordsView 未引用 |
+| [stores/demo.ts](../../frontend/src/stores/demo.ts) / [records.ts](../../frontend/src/stores/records.ts) | `demoEnabled` / `boardIsDemo` / `shownBoard` / `predictionRecords` | 统一控制比赛、记录、统计和记忆演示；记录与统计共用 predictionRecords，关闭后为空 |
 | [stores/oddsSelection.ts](../../frontend/src/stores/oddsSelection.ts) | `oddsSelection` / `sampleChatRequested` | 内存共享比赛与平台选择，不保存报价、不持久化；从演示比赛点“交给 AI 分析”时改为请求示例对话 |
 | [demo/](../../frontend/src/demo/league.ts) | `demoBoard` / `demoRecords` / `demoMemory` / `demoTranscript` | 虚构的“沙盘联赛”：十支球队、六家“演示平台”、盘口快照、约四个月的预测记录、记忆块和一段示例对话，由固定种子生成 |
 | [domain/](../../frontend/src/domain/settlement.ts) | `settle` / `summarize` / `equityCurve` | 按需求文档第 13、14 节计算赢输走盘、固定 1 单位的模拟盈亏、命中率、ROI、覆盖率、盈亏平衡命中率和命中率的 95% 区间；不依赖界面 |
 | [ChatView.vue](../../frontend/src/views/ChatView.vue) / [components/chat/](../../frontend/src/components/chat/markdown.ts) | `send` / `newChat` / `blocks` | 聊天页的状态与发送逻辑；起始画面、发言、等待卡片、输入区、右侧资料栏，以及把回答里的 Markdown 排成页面元素的 `markdown.ts` |
 | [MatchesView.vue](../../frontend/src/views/MatchesView.vue) / [components/odds/](../../frontend/src/components/odds/MatchBoard.vue) | `MatchBoard` / `NextTip` / `MatchCard` / `MatchDrawer` / `lineSpread` | 独立比赛页：筛选与分组、“下一场开赛”、比赛卡片、全部报价抽屉、各平台盘口分布 |
-| [RecordsView.vue](../../frontend/src/views/RecordsView.vue) / [data/recordPreview.ts](../../frontend/src/data/recordPreview.ts) | `visibleRecords` / `archiveDraft` / `archiveFor` / `viewRecord` / `recordPreview` | 预测记录：6 条虚构示例，选场与复盘档案切换，本页内存归档、补充与整理清单 |
-| [features/reviews/](../../frontend/src/features/reviews/ReviewComposer.vue) | `drafts` / `ready` / `toggleTag` / `visible` / `selected` / `checkedEntries` / `supplement` / `createReview` / `appendSupplement` | 复盘档案：按比赛保留草稿、摘要与标签、空白拦截；档案筛选、详情、追加补充、跨筛选多选与整理清单；数据只在本页内存 |
-| [StatisticsView.vue](../../frontend/src/views/StatisticsView.vue) / [features/statistics/](../../frontend/src/features/statistics/data.ts) | `scopedRecords` / `summary` / `comparison` / `demoRecords` / `summarize` / `dailyProfits` / `ProfitChart` | 效果统计：浅色看板，指标卡、日收益曲线、玩法对比与状态分布；固定演示数据，与记录页示例不共享 |
+| [RecordsView.vue](../../frontend/src/views/RecordsView.vue) / [components/records/](../../frontend/src/components/records/RecordDrawer.vue) | `rows` / `inspect` / `exportRows` / `RecordDrawer` | 深色记录日志、结果/球队搜索、指标、详情抽屉与 CSV 导出；详情展示判断、盘口、依据、结算及只读演示笔记 |
+| [features/reviews/](../../frontend/src/features/reviews/ReviewComposer.vue) / [data/recordPreview.ts](../../frontend/src/data/recordPreview.ts) | 旧版复盘原型 | 保留文件供参考，当前路由不再接入归档、补充与整理清单流程 |
+| [StatisticsView.vue](../../frontend/src/views/StatisticsView.vue) / [components/stats/](../../frontend/src/components/stats/EquityChart.vue) | `summary` / `series` / `weeks` / `versions` / `HitRing` / `OutcomeBars` | 深色统计：命中率与区间、净盈亏、ROI、覆盖率、累计曲线、周表现与策略对比；与记录共用数据和计算 |
 | [MemoryView.vue](../../frontend/src/views/MemoryView.vue) / [components/memory/](../../frontend/src/components/memory/MemoryRack.vue) | `MemoryRack` / `MemoryInspector` | 长期记忆的父块机柜、子块详情与操作、维护记录 |
-| [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `sections` / `draft` / `savePreview` / `resetPreview` | 设置：五类按钮框架，选项与开关只作当前页预览，不写浏览器或后台存储 |
-| [components/records/](../../frontend/src/components/records/RecordDrawer.vue) / [components/stats/](../../frontend/src/components/stats/EquityChart.vue) / [stores/records.ts](../../frontend/src/stores/records.ts) | `RecordDrawer` / `recordsToCsv` / `EquityChart` / `predictionRecords` | 本地版记录与统计内页实现；合并 `threehoon/dev` 后这三页改用远端实现，这些文件暂未接入路由与页面，去向待定 |
+| [SettingsView.vue](../../frontend/src/views/SettingsView.vue) | `recheck` / `bookmakers` / `restore` / `preferences` | 运行状态、只读后台规则；赔率格式、默认报价平台、动态背景与演示偏好即时生效，保存到本机浏览器 |
+| [useRecordScope.ts](../../frontend/src/composables/useRecordScope.ts) / [RecordFilters.vue](../../frontend/src/components/records/RecordFilters.vue) | `filters` / `records` / `query` / `reset` | 两页共用时间、玩法、记录来源、判断来源和策略筛选；最近 N 天按北京时间，全部时间含未来待开赛；页间链接携带共同筛选，不携带记录页专用的搜索与结算筛选 |
 | [components/common/](../../frontend/src/components/common/SideDrawer.vue) | `SideDrawer` / `DemoRibbon` / `EmptyState` / `TeamMark` / `StationIcon` | 侧边抽屉（焦点不外漏）、演示数据提示带、空状态、球队标记、模块图标 |
 | [client.ts](../../frontend/src/api/client.ts) / [health.ts](../../frontend/src/api/health.ts) | `getJson` / `getHealth` | GET 为 5 秒超时，POST 聊天按后端超时加 10 秒；脱敏错误提示及格式核对 |
 | [vite.config.ts](../../frontend/vite.config.ts) | `proxy` | 本机开发与预览时将 `/api` 转给后端 |
@@ -74,25 +74,29 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | 后端连接检查 | 有真实请求、响应核对、超时与手动重查逻辑；回到标签页且距上次检查超过 60 秒时自动再查一次 | `getHealth`、`getJson`、`stores/system.ts` 的 `checkHealth` |
 | 比赛与盘口 | 独立页面按北京时间筛选今天、明天、近 7 天、全部已开盘，按平台展示报价；选好平台后交给 AI | [MatchBoard.vue](../../frontend/src/components/odds/MatchBoard.vue)、[MatchCard.vue](../../frontend/src/components/odds/MatchCard.vue)、[MarketQuote.vue](../../frontend/src/components/odds/MarketQuote.vue) |
 | AI 聊天 | 每次读取最新保存快照；选场时只使用该比赛该平台，问题历史保留选场标签；等待中阻止重复提交、失败保留输入、不自动重试 | `ChatView.vue`、[chat.ts](../../frontend/src/api/chat.ts)、[类型](../../frontend/src/types/api.ts) |
-| 预测记录与复盘档案 | 6 条选场示例和 2 份初始档案；可填写、归档、查看、追加补充、筛选及勾选整理；只在本页内存中联动，刷新或离页重置，不持久化或执行分析 | [RecordsView](../../frontend/src/views/RecordsView.vue)、[档案 UI](../../frontend/src/features/reviews/ReviewArchive.vue)、[填写 UI](../../frontend/src/features/reviews/ReviewComposer.vue)、[示例模型](../../frontend/src/features/reviews/preview.ts) |
-| 效果统计 | A 浅色方案：总体指标、累计收益曲线、玩法对比、状态分布与筛选；仅演示，正式统计待接入；与预测记录示例不共享 | [StatisticsView](../../frontend/src/views/StatisticsView.vue)、[统计数据与计算](../../frontend/src/features/statistics/data.ts)、[收益曲线](../../frontend/src/features/statistics/ProfitChart.vue) |
+| 预测记录与复盘详情 | 共用沙盘联赛数据；筛选、结算详情与 CSV 可用；演示笔记只读，旧版填写/归档入口已退出当前路由，正式保存未实现 | `RecordsView` / `RecordDrawer` / `recordsToCsv` |
+| 效果统计 | domain/ 按记录计算，支持命中率区间、模拟盈亏/ROI、覆盖率、走势、周表现、版本对比；全局演示关闭后显示无正式数据 | `StatisticsView` / `domain/metrics.ts` / `components/stats/` |
 | 长期记忆 | 仅界面：父块机柜、子块详情与操作、维护记录，演示内容只在本页内存 | [MemoryView](../../frontend/src/views/MemoryView.vue)、[MemoryRack](../../frontend/src/components/memory/MemoryRack.vue) |
-| 设置 | 基础偏好、数据与盘口、AI 与调用、分析与记录、数据管理五类；可试选与暂存本页预览，未改实际配置；导出、导入和管理连接禁用待接入 | [SettingsView](../../frontend/src/views/SettingsView.vue) |
+| 设置 | 本机显示偏好可保存并生效，状态检查只读；模型、超时、密钥与业务规则不提供编辑 | `SettingsView` / `preferences.ts` / `system.ts` |
 | 跨页面业务状态 | Vue 的 ref / reactive 共享选场、运行状态和显示偏好，KeepAlive 保留聊天；没有新增状态库 | [stores 说明](../../frontend/src/stores/README.md) |
 | 3D 启动页 | 部分实现：写实风格的实时 3D 指挥室、模块菜单、点选设备、开场运镜与进入流程可用；全部由代码生成，未经美术评审，未在手机实机验证 | `StartupView.vue`、`startup/`，详见文末 |
 | 沙盘篮球比赛 | 部分实现：从启动页点“开始比赛”进入的 3v3 街机篮球，键盘或手柄操作，可完整打完一场；当天按试玩意见做过第二轮（衔接、难度、球员模型与动作、球馆），第二轮的手感、难度与听感只经过自动化检查，还没有真人试玩；不支持触屏 | `game/`、`GameHud.vue`，详见文末 |
-## PR #2 审查后的当前行为（2026-11-13）
+## 三页当前行为（2026-11-13）
 
-- `AppShell.lightPage` 对 records/statistics/settings 提供浅色背景、文字与 `color-scheme: light`；三页原有内容与演示逻辑保留，避免新深色外壳让原来的深色标题不可读。
-- `ChatView` 监听 `oddsSelection`：示例对话期间选择真实比赛，自动清除虚构问答并恢复输入，保留选中的比赛和平台；真实聊天之间选场仍保留历史。
-- 用户明确选择保留 `DEFAULTS.demo = auto`：没有真实盘口时自动显示带标记的虚构比赛；可通过提示带、比赛/记忆页顶部演示按钮或命令面板关闭。记录和统计有自己的演示/空白入口，不受此开关控制；设置仍只是本页预览。
-- 状态条只为比赛和记忆显示全局演示按钮；它直接关闭这两个模块的演示，不再引导去没有该开关的设置页。记录和统计沿用自身标记，避免把正式空白状态误标为演示。
-- 当前入口与上方模块表为准；下方“本地版设计记录”中记录导出、另一套统计和设置偏好功能未接入当前页面。
+- 用户明确要求界面、演示数据和交互一起切换到另一版。现有可达历史没有完整的另一版三页，本次复用已保留组件、数据和领域计算重建页面入口，不宣称逐字恢复原文件。
+- 公共外壳移除 `lightPage`。三页使用 `tokens.css` 与 `ui.css` 的深色面板、青色强调、共享按钮及表单。
+- `RecordsView` 与 `StatisticsView` 使用 `predictionRecords` → `demo/records.ts`，结算、汇总、曲线和导出使用同一领域模型；默认最近 30 天、赛前记录、系统判断，来源互不混算。
+- `useRecordScope` 与 `RecordFilters` 统一共同筛选。记录页额外提供结果及搜索，导出严格对应最终可见列表；跨页链接只传共同筛选。
+- 记录详情复用 `RecordDrawer`；旧版 `features/reviews/`、`features/statistics/` 和 `data/recordPreview.ts` 保留但退出当前入口。当前没有填写、归档和补充复盘功能。
+- 设置直接连接 `preferences`，赔率格式、默认报价平台、背景与演示修改即时生效并保存到本机 localStorage；运行状态读取 `system`，不会请求真实模型或刷新供应商盘口。模型及后台规则只读。
+- `DEFAULTS.demo = auto` 保持；设置、提示带、命令面板、记录/统计/记忆顶部按钮共同控制演示；有真实盘口时比赛页仍优先真实数据。
+- PR #2 的示例聊天切回真实聊天修复保留。3D、后端与盘口供应商逻辑未改。
 
 ## 验证记录
 
 | 日期 | 方式 | 实际结果与边界 |
 | --- | --- | --- |
+| 2026-11-13 | 深色三页切换，构建与 Chromium 模拟接口 | 268 modules；默认 95 条/+6.34 单位，筛选让分 48 条/+2.93 单位，CSV 48 行并带虚构标记，跨页统计相同；五种结算状态、抽屉 Tab/Esc、图表方向键、偏好刷新保留、演示关闭后空状态通过；三页 1440/390px 溢出 0，pageerror 0，仅 GET 请求；未验证真实后台、Excel 实机、手机实机或 3D |
 | 2026-11-13 | PR #2 审查、`npm --prefix frontend run build` 与 Chromium 浏览器 | 修正后类型检查通过，`255 modules transformed / built in 240ms`；六页 1440px/390px 无横向溢出，浅色三页恢复底色；模拟聊天切页保留、HTML 不执行、所选平台 b 请求、示例历史不混入真实请求、抽屉 Tab/Esc 通过；自动演示 11 张卡片，关闭后 0；无 WebGL 时仍可进原目标页；3D 场景和比赛进入/暂停/退出通过。GPU ReadPixels 和并行 shader 扩展警告导致无头浏览器等待超时，之后确认就绪；未验证真实性能、手机实机、真实接口或付费调用 |
 | 2026-11-12 | 合入 dev 前增量核对：`npm --prefix frontend run build`、Node 离线断言、`git diff --check` | 类型检查通过，`81 modules transformed / built in 143ms`；默认统计 100 笔结算、58 赢 42 输、+8.6 元、8.6% ROI 与曲线一致，特殊状态及空样本通过；两份初始档案、同场玩法关联、空白拦截、摘要回退和追加保留原文通过。本轮未重跑浏览器，以下浏览器结果为历史证据；未调用模型、更新盘口或验证正式存储 |
 | 2026-11-12 | `npm --prefix frontend run build`、Node 离线断言与浏览器 `/records` | 最终 `81 modules transformed / built in 144ms`，含同期设置/统计；初始档案 2，新归档后为 3；补充保留原文、返回对应预测、日期/玩法/标签/搜索、跨筛选多选及整理清单通过；空白后筛选清理、刷新恢复 2 份示例通过；1440px/390px 无横向溢出，warn/error 为 `[]`。离线核对同场两个玩法关联、空白输入拦截和追加不修改原文；不代表正式存储已实现 |
@@ -103,7 +107,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 | 2026-11-11 | 本轮 `npm run build` | 类型检查与构建通过，首次输出 `52 modules transformed / built in 68ms`；保留同期盘口代码后最终输出 `63 modules transformed / built in 104ms` |
 | 2026-11-11 | 本轮浏览器实际发送 | 显示 `gpt-6.1-sol` 已配置，发送后先显示等待，再显示“网页模型连接成功。”；按钮恢复，无自动二次提交 |
 
-已有启动和构建入口为根目录的 `make frontend`、`make build`；前置依赖见 [README](../../README.md)。本轮执行了构建，并复用已启动的本地网站验证聊天。
+已有启动和构建入口为根目录的 `make frontend`、`make build`；前置依赖见 [README](../../README.md)。本轮执行构建，复用 5173 开发服务，通过独立浏览器上下文和模拟接口验证三页；没有发送真实聊天。
 
 ## 限制、未决事项与下一步
 
@@ -112,16 +116,20 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 - 模型每次读取的是保存的快照，不会自动更新外部盘口；当前没有完整赛程、实时比分或伤病查询。
 - 当前轮最多 20 次提问；页面切换保留对话，刷新或关闭网站会丢失对话，没有长期记忆、正式预测保存、逐字显示或停止生成。
 - “模型已配置”不是在线探测；打开页面、检查配置不会调用付费模型。
-- 预测记录与复盘档案仅为 UI 预览，不调用业务接口；示例对阵、盘口、赛果均虚构。每条预测为一个玩法，档案按比赛归组；归档后本页已复盘/待复盘统计联动，但不是正式持久化。原文保留，补充另存内存条目；刷新或离页后恢复。真实记录、赛果、结算、数据库、多人隔离和汇总分析后续实现。
-- 效果统计独立使用固定日期演示数据，默认最近 30 天为 2026-10-14 至 2026-11-12；与记录页六条示例不是同一数据集。只支持导航连接，尚未共享筛选或正式记录；选择“查看正式数据”只显示待接入说明，不请求不存在的接口。
 
-## 设置按钮框架（2026-11-12）
+- 当前记录与统计只用虚构数据；正式预测、赛果接口、复盘保存、多人隔离和汇总分析待实现。模拟金额以每次 1 单位展示，不代表真实资金。
+- 设置只保存本机显示偏好，不保存后台配置；浏览器禁止存储时只能在当前打开期间生效。
+
+## 历史：设置按钮框架（2026-11-12）
+
+> 以下旧版三页及复盘档案说明保留历史设计依据；2026-11-13 已切换，当前实现以上方入口表及“三页当前行为”为准。
+
 
 `SettingsView` 替换占位页，沿用深绿与浅色风格，样式 scoped，不修改公共布局。桌面分类在左、内容在右；950px 以下分类变成横排，700px 以下表单选择铺满一行。使用原生 select、带 label 的 switch、带 aria-pressed 的密度按钮；未接入功能禁用并提供原因。
 
 `draft` 是预览选项，`saved` 仅记录本次页面内已暂存值，`dirty` 决定暂存按钮状态。分类切换保留预览；App 仅缓存 ChatView，因此离开设置或刷新会重新初始化，不写 localStorage、不请求设置接口、不读取密钥。时区、赔率、超时等字段尚未应用于其他页面，所有默认值只代表框架示例，不能当作已确定的业务规则。后续需确定设置范围、保存接口与实际应用位置；运行状态与真实额度也未接入。本次截图和交接见[设置按钮框架](../handoff/2026-11-12-设置按钮框架.md)。
 
-## 浅色效果统计 UI（2026-11-12）
+## 历史：浅色效果统计 UI（2026-11-12）
 
 用户选择 A 浅色研究看板，并确认首屏优先整体表现和收益走势。`StatisticsView` 用同一组选择计算四张指标卡、日收益曲线与记录分布，比较卡独立展示相同日期/版本/来源下的两个玩法，点击“查看走势”切换主看板玩法。统计按选择而非比赛计数；命中率排除走盘，ROI 分母包含已结算走盘投入，取消和待结算不计入投入，零样本显示横线。
 
@@ -129,7 +137,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 本轮只修改统计专用源码，保留同期 `RecordsView`、公共样式和导航；真实记录字段、日期口径与赛果统计服务仍需在数据接入阶段统一。完整说明和实际截图见[效果统计浅色 UI](../handoff/2026-11-12-效果统计浅色UI.md)。
 
-## 复盘档案 UI（2026-11-12）
+## 历史：复盘档案 UI（2026-11-12）
 
 用户确认先积累每场复盘，之后自行选择材料集中分析和调整策略，要求与设置页并行开发。新增模块限定在 `features/reviews/`，仅修改 `RecordsView` 接入；不改设置、统计、公共样式、布局、路由或依赖。档案入口为 `/records` 内的两个按钮，使用 `v-show` 切换以保留本页预览状态。
 
@@ -137,7 +145,7 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 档案支持日期、玩法、标签与全文搜索（含补充），按最近更新时间显示。筛选隐藏已勾选材料时保留选择，并明确显示总选择数；可查看整理清单，汇总分析按钮禁用。归档不会修改策略。空白预览清理档案筛选和勾选，返回示例保留当前页归档；刷新或离页后重置。完整范围、并行边界和截图见[复盘档案 UI 交接](../handoff/2026-11-12-复盘档案UI.md)。
 
-## 个人选场复盘 UI（2026-11-12）
+## 历史：个人选场复盘 UI（2026-11-12）
 
 用户明确先做自己的选场复盘，并要求当前只搭 UI。`RecordsView` 直接引用 `data/recordPreview.ts`，替代原占位组件，不引入依赖或修改公共样式。桌面为列表与详情并排，1200px 以下详情排到列表下方，700px 以下概览为两列、筛选纵向排列。列表使用按钮支持键盘选择；状态有文字区分，支持无动画偏好。
 
@@ -299,7 +307,9 @@ Vue 负责显示页面，TypeScript 用于检查数据和代码格式，Vue Rout
 
 边界：这一轮没有连接真实后端、真实盘口和真实模型，真实回答的排版（尤其是很长或格式不规整的回答）未经实际检验；未在手机实机、Safari、Firefox、核显或低性能设备上运行，背景在弱显卡上的开销未知；界面只做了截图自检，没有经过项目负责人或美术评审；导出的 CSV 没有在 Excel 里实际打开过；键盘操作只核对了命令面板和抽屉，没有用读屏软件走过完整流程。聊天把发送方式改成 Ctrl/⌘+Enter 是出于“发送要花钱”的考虑自行决定的。
 
-## 提交说明（2026-11-12）
+## 历史：提交说明（2026-11-12）
+
+> 这是 PR #2 合并时的取舍。2026-11-13 已重新接入保留的组件和数据，并重建三个页面；下面的“未接入”描述只代表合并当时。
 
 在 `threehoon/dev`（`10ea61a`）之上提交时，`RecordsView.vue`、`StatisticsView.vue`、`SettingsView.vue` 三页双方各自重写过。结论：三页采用远端实现（个人选场复盘 UI、浅色效果统计 UI、设置按钮框架），本地版本不接入路由；本地版专属文件 `components/records/RecordDrawer.vue`、`components/stats/EquityChart.vue`、`stores/records.ts` 仍留在仓库，当前没有任何文件引用它们，去向待负责人决定。长期记忆页没有冲突，继续使用本地版本。
 

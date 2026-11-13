@@ -13,7 +13,7 @@ const current = computed(() => STARTUP_MODULES.find((item) => item.route === rou
 /** 当前页面是否正在显示演示数据。 */
 const showingDemo = computed(() => {
   if (route.name === 'matches') return boardIsDemo.value
-  return route.name === 'memory' && demoEnabled.value
+  return ['records', 'statistics', 'memory'].includes(String(route.name)) && demoEnabled.value
 })
 const clock = computed(() => new Intl.DateTimeFormat('zh-CN', { timeZone: 'Asia/Shanghai', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now.value))
 
