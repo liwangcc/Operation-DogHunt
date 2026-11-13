@@ -1,7 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from datetime import datetime, timedelta, timezone
 
 from app.core.config import Settings
 from app.integrations.llm import ModelError, request_model
@@ -21,7 +20,8 @@ async def chat(request: ChatRequest, settings: Settings) -> ChatResponse:
         # 磁盘读取不阻塞其他接口；每次发送重新读取，避免把页面旧报价当最新快照。
         board = await asyncio.to_thread(read_board)
         context = odds_context(board, request.odds_selection)
-        now = datetime.now(ZoneInfo("Asia/Shanghai")).strftime("%Y-%m-%d %H:%M:%S")
+        # 北京时间没有夏令时，用固定 UTC+8；Windows 默认没有 tzdata，ZoneInfo("Asia/Shanghai") 会报错
+        now = datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
         try:
             prompt = static_prompt()
         except ChatPromptError as exc:
