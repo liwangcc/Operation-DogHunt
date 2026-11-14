@@ -46,15 +46,20 @@ export const RULES = {
   tipoffSeconds: 1.5,
 } as const
 
-/** 跳投：按下后多久到达最佳出手点，以及各档评价的时间窗口。 */
+/** 跳投：按下后多久到达最佳出手点，“不错”一档的时间窗口，以及拖多久会被迫出手。 */
 export const SHOT = {
   idealRelease: 0.4,
-  perfectWindow: 0.032,
   goodWindow: 0.085,
   forcedRelease: 0.74,
   jumpSpeed: 3.7,
   followThrough: 0.3,
 } as const
+
+/**
+ * 完美出手的时间窗口（最佳出手点前后各多少秒）。完美出手必进，所以窗口随距离收窄：
+ * near 米以内最宽，到三分线收到 arc，线外每远一米再收 fade；收到不足一个物理步就没有完美出手。
+ */
+export const PERFECT = { wide: 0.019, near: 2.5, arc: 0.0115, fade: 0.0018 } as const
 
 export const MOVES = {
   layupSeconds: 0.62,
@@ -76,7 +81,7 @@ export const MOVES = {
  * 电脑对手相对玩家一方的能力加成：速度按倍数，投篮、抢断、封盖按点数，
  * timing 是出手时机的离散程度（越小越稳，玩家队友为 1）。
  */
-export const EDGE = { speed: 1.04, shooting: 0.08, steal: 0.15, block: 0.1, timing: 0.9 } as const
+export const EDGE = { speed: 1.04, shooting: 0.08, steal: 0.15, block: 0.1, timing: 0.85 } as const
 
 /** 身体保持朝向（防守滑步）时的速度折扣：横移与后退都比正面跑慢。 */
 export const STRAFE = { side: 0.84, back: 0.7 } as const

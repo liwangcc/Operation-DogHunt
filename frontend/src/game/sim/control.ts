@@ -1,6 +1,6 @@
 // 玩家输入 → 球员动作：同一个键在进攻和防守时含义不同（投篮/封盖、传球/换人、变向/抢断）。
 import { releaseJumper, tryDash, tryJump, tryPass, tryShoot, trySteal } from './actions'
-import type { Move } from './ai'
+import type { Move } from './footwork'
 import type { Athlete, Intent, MatchState } from './types'
 
 export const NO_INTENT: Intent = {

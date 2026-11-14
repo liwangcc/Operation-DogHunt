@@ -23,6 +23,9 @@ export interface GameCallbacks {
   onHud: (state: HudState) => void
   /** 屏幕中央闪现的一句提示（进球、抢断、违例、出手评价）。 */
   onFeed: (text: string, tone: FeedTone) => void
-  /** 出手条：visible 为 false 时隐藏；x、y 是它在画面上的位置，fill 为 0–1 的蓄力进度。 */
-  onMeter: (visible: boolean, x: number, y: number, fill: number) => void
+  /**
+   * 出手条：visible 为 false 时隐藏；x、y 是它在画面上的位置，fill 为 0–1 的蓄力进度，
+   * perfect 是完美区占整条的比例（这次出手没有完美区时为 0）。
+   */
+  onMeter: (visible: boolean, x: number, y: number, fill: number, perfect: number) => void
 }

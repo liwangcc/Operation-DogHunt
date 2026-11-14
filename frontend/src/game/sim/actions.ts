@@ -1,7 +1,8 @@
 // 球员的各种动作：跳投、上篮、扣篮、传球、抢断、起跳封盖和变向，以及这些动作随时间的推进。
-import { standingReach, turnToward } from './athlete'
+import { speedOf, standingReach, turnToward } from './athlete'
 import { BALL, COURT, MOVES, SHOT } from './constants'
-import { gradeRelease, isThree, launchShot, makeChance } from './shooting'
+import { runwayClear } from './contact'
+import { gradeRelease, isThree, launchShot, makeChance, perfectWindow } from './shooting'
 import type { Athlete, MatchState, ReleaseGrade, ShotKind } from './types'
 
 export function hoopSide(match: MatchState, athlete: Athlete): number {
@@ -45,6 +46,7 @@ function begin(athlete: Athlete, action: Athlete['action']): void {
   athlete.action = action
   athlete.actionTime = 0
   athlete.released = false
+  athlete.bump = 0
 }
 
 /** 把球交给物理：从球员手里变成飞行中的投篮。 */
@@ -53,8 +55,10 @@ function releaseBall(match: MatchState, shooter: Athlete, kind: ShotKind, grade:
   const ball = match.ball
   const side = hoopSide(match, shooter)
   Object.assign(ball, { state: 'shot', holder: -1, shooter: shooter.id, shotValue: value, shotKind: kind })
-  Object.assign(ball, { shotPerfect: grade === 'perfect', touchedIron: false, flight: 0, lastTouch: shooter.team })
-  launchShot(ball, side, match.random() < chance, match.random)
+  // 完美出手必进：正对筐心出手，不掷骰子，也封不到（见 possession.ts 的 resolveBlock）。
+  const perfect = kind === 'jumper' && grade === 'perfect'
+  Object.assign(ball, { shotPerfect: perfect, touchedIron: false, flight: 0, lastTouch: shooter.team })
+  launchShot(ball, side, perfect || match.random() < chance, match.random, perfect)
   shooter.released = true
   match.events.push({ type: 'release', player: shooter.id, grade, kind })
 }
@@ -62,10 +66,17 @@ function releaseBall(match: MatchState, shooter: Athlete, kind: ShotKind, grade:
 /** 跳投出手：玩家松开投篮键、电脑到了预定时间，或者拖得太久被迫出手时调用。 */
 export function releaseJumper(match: MatchState, shooter: Athlete): void {
   if (shooter.action !== 'shoot' || shooter.released) return
-  const side = hoopSide(match, shooter)
-  const grade = gradeRelease(shooter.actionTime)
-  const three = isThree(shooter.x, shooter.z, side)
-  const chance = makeChance(shooter, hoopDistance(match, shooter), three, contestOn(match, shooter), grade, 'jumper', shooter.shotMoving)
+  // 起跳后哨响了（节末、24 秒）或者球被掏走：手里已经没有球，这次出手作废，落地后照常收势。
+  if (match.ball.holder !== shooter.id) {
+    shooter.released = true
+    return
+  }
+  const three = isThree(shooter.x, shooter.z, hoopSide(match, shooter))
+  const distance = hoopDistance(match, shooter)
+  const contest = contestOn(match, shooter)
+  // 完美窗口是起跳时定下的；没到完美时，命中率按出手这一刻的距离和防守算。
+  const grade = gradeRelease(shooter.actionTime, shooter.shotWindow)
+  const chance = makeChance(shooter, distance, three, contest, grade, 'jumper', shooter.shotMoving)
   releaseBall(match, shooter, 'jumper', grade, chance, three ? 3 : 2)
 }
 
@@ -86,16 +97,23 @@ function startRunToRim(match: MatchState, athlete: Athlete, action: 'layup' | 'd
   faceHoop(match, athlete)
 }
 
+/** 冲得够快、离筐够近，而且冲筐路线上没有对方的身体挡着，才起得了扣篮。 */
+export function canDunk(match: MatchState, athlete: Athlete): boolean {
+  const distance = hoopDistance(match, athlete)
+  if (!athlete.ratings.dunk || distance <= 1.1 || distance >= 3.4 || closingSpeed(match, athlete) <= 3.6) return false
+  return runwayClear(match, athlete, hoopSide(match, athlete) * COURT.hoopX)
+}
+
 /**
- * 持球人按下投篮键：离筐近且正在冲筐就扣篮，离筐近但没有速度就上篮，其余情况起跳投篮。
- * 返回是否开始了某个出手动作。
+ * 持球人按下投篮键：离筐近、正在冲筐且路线上没人挡着就扣篮；扣不了时，贴近篮筐或者正冲着篮筐跑就上篮
+ * （路上有人挡着会撞上去，多半被顶歪）；其余情况起跳投篮。返回是否开始了某个出手动作。
  */
 export function tryShoot(match: MatchState, athlete: Athlete): boolean {
   if (match.ball.holder !== athlete.id || athlete.action !== 'free' || athlete.y > 0) return false
   const distance = hoopDistance(match, athlete)
-  if (athlete.ratings.dunk && distance > 1.1 && distance < 3.4 && closingSpeed(match, athlete) > 3.6) {
+  if (canDunk(match, athlete)) {
     startRunToRim(match, athlete, 'dunk', 0.34, BALL.gravity * MOVES.dunkSlam * 0.97)
-  } else if (distance < 2.5) {
+  } else if (distance < 2.5 || (distance < 3.4 && closingSpeed(match, athlete) > 3.6)) {
     startRunToRim(match, athlete, 'layup', 0.8, 4.1)
   } else {
     begin(athlete, 'shoot')
@@ -104,6 +122,9 @@ export function tryShoot(match: MatchState, athlete: Athlete): boolean {
     athlete.vx *= 0.3
     athlete.vz *= 0.3
     faceHoop(match, athlete)
+    // 完美窗口在起跳这一刻定下：先拉开空间再起跳，之后对手扑上来也压不窄它，出手条上的绿区不会边按边变。
+    const three = isThree(athlete.x, athlete.z, hoopSide(match, athlete))
+    athlete.shotWindow = perfectWindow(athlete, distance, three, contestOn(match, athlete), athlete.shotMoving)
   }
   return true
 }
@@ -157,6 +178,9 @@ export function tryPass(match: MatchState, passer: Athlete, dirX: number, dirZ: 
   return true
 }
 
+/** 持球人把球暴露出来时，被掏掉的可能性放大多少倍：正对着抢断者冲、全速推进。 */
+const STEAL = { charging: 1.6, sprinting: 1.3 } as const
+
 /** 抢断：向前探一步去掏球。成败在动作进行到一半时结算（见 resolveSteal）。 */
 export function trySteal(match: MatchState, athlete: Athlete): boolean {
   if (athlete.action !== 'free' || athlete.stealCooldown > 0 || athlete.y > 0) return false
@@ -169,6 +193,21 @@ export function trySteal(match: MatchState, athlete: Athlete): boolean {
   return true
 }
 
+/**
+ * 球护得好不好（1 为平常）：背对抢断者是在护球，最难掏；
+ * 正对着他冲过来、或者全速推进时，球离身体远、完全暴露在身前，最容易被掏。
+ */
+export function ballExposure(holder: Athlete, thief: Athlete): number {
+  const dx = holder.x - thief.x
+  const dz = holder.z - thief.z
+  const gap = Math.max(0.01, Math.hypot(dx, dz))
+  if (Math.cos(holder.facing) * -dx + Math.sin(holder.facing) * -dz < 0) return 0.45
+  let exposure = 1
+  if ((holder.vx * -dx + holder.vz * -dz) / gap > 3) exposure *= STEAL.charging
+  if (speedOf(holder) > holder.ratings.speed * 0.8) exposure *= STEAL.sprinting
+  return exposure
+}
+
 function resolveSteal(match: MatchState, thief: Athlete): void {
   thief.released = true
   const ball = match.ball
@@ -179,13 +218,8 @@ function resolveSteal(match: MatchState, thief: Athlete): void {
   const gap = Math.hypot(dx, dz)
   const aimed = (dx * Math.cos(thief.facing) + dz * Math.sin(thief.facing)) / Math.max(gap, 0.01)
   if (gap > 1.35 || aimed < 0.4) return
-  // 持球人背对抢断者时在护球，更难掏到；正在变向时球离身体远，更容易。
-  const shielding = Math.cos(holder.facing) * -dx + Math.sin(holder.facing) * -dz < 0
-  let chance = 0.1 + thief.ratings.steal * 0.2
-  if (shielding) chance *= 0.45
-  // 持球人正对着抢断者冲过来时，球完全暴露在身前。
-  const charging = (holder.vx * -dx + holder.vz * -dz) / Math.max(gap, 0.01)
-  if (!shielding && charging > 3) chance *= 1.35
+  let chance = (0.08 + thief.ratings.steal * 0.18) * ballExposure(holder, thief)
+  // 变向换手的一瞬间球贴着身体走，不好掏。
   if (holder.action === 'dash') chance *= 0.5
   if (holder.action !== 'free' && holder.action !== 'dash') chance *= 0.6
   if (match.random() > chance) return
@@ -228,11 +262,23 @@ export function tryDash(match: MatchState, athlete: Athlete, dirX: number, dirZ:
   return true
 }
 
-/** 上篮与扣篮时，球员沿“起跳点 → 篮下”的路线腾空，方向键不再起作用。 */
+/** 冲筐腾空时的最高水平速度。 */
+const GLIDE_SPEED = 7.5
+
+/**
+ * 上篮与扣篮时，球员沿“起跳点 → 篮下”的路线腾空，方向键不再起作用。
+ * 路上撞到对方的身体就冲不动了：撞得越结实速度上限越低，不会在最后一刻挤过去。
+ */
 function glideToRim(athlete: Athlete, duration: number, dt: number): void {
   const remaining = Math.max(dt, duration - athlete.actionTime)
   athlete.vx = (athlete.toX - athlete.x) / remaining
   athlete.vz = (athlete.toZ - athlete.z) / remaining
+  const speed = Math.hypot(athlete.vx, athlete.vz)
+  const limit = GLIDE_SPEED * (1 - 0.85 * athlete.bump)
+  if (speed > limit) {
+    athlete.vx *= limit / speed
+    athlete.vz *= limit / speed
+  }
   if (athlete.actionTime >= duration) {
     athlete.vx = 0
     athlete.vz = 0
@@ -250,12 +296,23 @@ function rimProtected(match: MatchState, dunker: Athlete): Athlete | null {
   return null
 }
 
+/** 终结时受到的干扰：身前的防守，加上冲筐途中吃到的身体对抗。 */
+function finishContest(match: MatchState, athlete: Athlete): number {
+  return Math.min(1, contestOn(match, athlete) + athlete.bump * 0.5)
+}
+
 function slam(match: MatchState, dunker: Athlete): void {
   const ball = match.ball
   const side = hoopSide(match, dunker)
+  // 被身体顶在半路、没能到筐前：扣不成，只能在对抗中把球勉强抛向篮筐。
+  if (Math.hypot(dunker.toX - dunker.x, dunker.toZ - dunker.z) > 0.5) {
+    const chance = makeChance(dunker, hoopDistance(match, dunker), false, 1, 'good', 'layup', 0) * 0.6
+    releaseBall(match, dunker, 'layup', 'good', chance, 2)
+    return
+  }
   const blocker = rimProtected(match, dunker)
   dunker.released = true
-  if (blocker && match.random() < 0.3 + blocker.ratings.block * 0.25) {
+  if (blocker && match.random() < 0.35 + blocker.ratings.block * 0.3) {
     Object.assign(ball, { state: 'loose', holder: -1, lastTouch: blocker.team, flight: 0, touchedIron: true })
     ball.vx = -side * (3 + match.random() * 2)
     ball.vy = 2.5
@@ -263,8 +320,8 @@ function slam(match: MatchState, dunker: Athlete): void {
     match.events.push({ type: 'block', player: blocker.id })
     return
   }
-  // 身前有人贴防时，扣篮可能被顶歪，砸在筐沿上弹出来。
-  if (match.random() < contestOn(match, dunker) * 0.5) {
+  // 身前有人贴防、或者起跳后被撞了一下，扣篮可能被顶歪，砸在筐沿上弹出来。
+  if (match.random() < finishContest(match, dunker) * 0.6) {
     Object.assign(ball, { x: side * (COURT.hoopX - 0.2), y: COURT.rimHeight + 0.14, z: 0.05, state: 'shot', holder: -1, shooter: dunker.id, shotValue: 2, shotKind: 'dunk' })
     Object.assign(ball, { shotPerfect: false, touchedIron: true, flight: 0, lastTouch: dunker.team, vx: -side * 2.2, vy: 3.4, vz: (match.random() - 0.5) * 3 })
     match.events.push({ type: 'rim', speed: 6, side })
@@ -276,7 +333,7 @@ function slam(match: MatchState, dunker: Athlete): void {
 }
 
 function layUp(match: MatchState, athlete: Athlete): void {
-  const chance = makeChance(athlete, hoopDistance(match, athlete), false, contestOn(match, athlete), 'good', 'layup', 0)
+  const chance = makeChance(athlete, hoopDistance(match, athlete), false, finishContest(match, athlete), 'good', 'layup', 0)
   releaseBall(match, athlete, 'layup', 'good', chance, 2)
 }
 

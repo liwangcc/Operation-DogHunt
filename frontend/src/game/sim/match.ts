@@ -1,9 +1,10 @@
 // 比赛主循环：每个物理步里依次处理决策、动作、移动、球，再按规则判定进球、出界、进攻超时和每节结束。
 import { hoopSide, releaseJumper, updateAction } from './actions'
 import { decide, shouldRelease } from './ai'
-import { createAthlete, integrate, separate, speedOf, steer, turnToward } from './athlete'
+import { createAthlete, integrate, speedOf, steer, turnToward } from './athlete'
 import { createBall, stepBall } from './ball'
 import { COURT, RULES, STEP } from './constants'
+import { collide } from './contact'
 import { applyIntent } from './control'
 import { carryBall, checkBounds, resolveFreeBall } from './possession'
 import type { Athlete, Intent, MatchState, Role, TeamId } from './types'
@@ -203,7 +204,7 @@ export function stepMatch(match: MatchState, intent: Intent | null): void {
   }
   for (const athlete of match.athletes) driveAthlete(match, athlete, intent)
   for (const athlete of match.athletes) integrate(athlete, STEP, match.ball.holder === athlete.id)
-  separate(match.athletes)
+  collide(match)
   for (const athlete of match.athletes) faceTheAction(match, athlete)
 
   const ball = match.ball

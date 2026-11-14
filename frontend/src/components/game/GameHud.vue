@@ -14,22 +14,32 @@ const emit = defineEmits<{ pause: []; restart: []; exit: []; mute: [] }>()
 
 const meter = ref<HTMLElement | null>(null)
 const meterFill = ref<HTMLElement | null>(null)
+const meterSweet = ref<HTMLElement | null>(null)
 
 const clock = computed(() => `${Math.floor(props.hud.clock / 60)}:${String(props.hud.clock % 60).padStart(2, '0')}`)
 const periodLabel = computed(() => (props.hud.overtime ? '加时' : `第 ${props.hud.period} 节`))
 const finished = computed(() => props.hud.phase === 'final')
 const won = computed(() => props.hud.score[0] > props.hud.score[1])
-/** 最佳出手点在出手条上的位置（百分比）。 */
+/** 最佳出手点在出手条上的位置，以及“时机不错”那一段的长度（百分比）。 */
 const sweetSpot = `${(SHOT.idealRelease / SHOT.forcedRelease) * 100}%`
-const sweetSize = `${((SHOT.perfectWindow * 2) / SHOT.forcedRelease) * 100}%`
+const goodSize = `${((SHOT.goodWindow * 2) / SHOT.forcedRelease) * 100}%`
+/** 上一次画的完美区长度；一次出手期间它不变，没变就不碰样式。 */
+let shownPerfect = -1
 
-/** 出手条每帧都在动，直接改样式，不经过响应式更新。 */
-function setMeter(visible: boolean, x: number, y: number, fill: number): void {
-  if (!meter.value || !meterFill.value) return
+/**
+ * 出手条每帧都在动，直接改样式，不经过响应式更新。
+ * @param perfect 完美区（绿区）占整条的比例：离筐越远、起跳时被贴得越紧越窄，为 0 表示这次出手没有完美区
+ */
+function setMeter(visible: boolean, x: number, y: number, fill: number, perfect: number): void {
+  if (!meter.value || !meterFill.value || !meterSweet.value) return
   meter.value.style.opacity = visible ? '1' : '0'
   if (!visible) return
   meter.value.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`
   meterFill.value.style.height = `${fill * 100}%`
+  if (perfect === shownPerfect) return
+  shownPerfect = perfect
+  meterSweet.value.style.height = `${perfect * 100}%`
+  meter.value.classList.toggle('no-perfect', perfect <= 0)
 }
 
 /** 点完按钮后把焦点交还给页面，否则空格键会再次触发这个按钮而不是投篮。 */
@@ -70,15 +80,20 @@ defineExpose({ setMeter })
     </Transition>
 
     <div ref="meter" class="meter" aria-hidden="true">
-      <div class="meter-track">
-        <div class="meter-sweet" :style="{ bottom: sweetSpot, height: sweetSize }"></div>
-        <div ref="meterFill" class="meter-fill"></div>
+      <div class="meter-body">
+        <div class="meter-track">
+          <div class="meter-good" :style="{ bottom: sweetSpot, height: goodSize }"></div>
+          <div ref="meterSweet" class="meter-sweet" :style="{ bottom: sweetSpot }"></div>
+          <div ref="meterFill" class="meter-fill"></div>
+        </div>
+        <div class="meter-notch" :style="{ bottom: sweetSpot }"></div>
       </div>
     </div>
 
     <aside class="controls" aria-label="操作说明">
       <p><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 移动 <kbd>Shift</kbd> 加速（防守时不按加速 = 面向持球人滑步）</p>
-      <p><kbd>J</kbd> 投篮（按住蓄力，松开出手）· 防守时起跳</p>
+      <p><kbd>J</kbd> 投篮（按住蓄力，在绿区松手必进）· 防守时起跳</p>
+      <p class="hint">站稳、拉开空间再起跳才有绿区，离筐越远越窄；冲筐路上有人挡着扣不了</p>
       <p><kbd>K</kbd> 传球 · 防守时换人 <kbd>L</kbd> 变向 · 防守时抢断</p>
     </aside>
 
@@ -131,14 +146,20 @@ defineExpose({ setMeter })
 .feed-enter-from { opacity: 0; transform: translateX(-50%) scale(.7); }
 .feed-leave-to { opacity: 0; }
 
-/* 出手条：锚点在球员头顶，条本身偏到右侧。 */
+/* 出手条：锚点在球员头顶，条本身偏到右侧。淡色一段是“时机不错”，中间的绿区是完美出手（必进），两侧的刻度标出最佳出手点。 */
 .meter { position: absolute; top: 0; left: 0; opacity: 0; transition: opacity .08s; }
-.meter-track { position: absolute; left: 26px; bottom: -8px; width: 11px; height: 74px; border: 1.5px solid rgba(237, 245, 250, .85); border-radius: 6px; background: rgba(6, 13, 22, .75); overflow: hidden; }
-.meter-sweet { position: absolute; left: 0; right: 0; background: #37e08f; transform: translateY(50%); }
-.meter-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(237, 245, 250, .55); border-top: 2px solid #fff; }
+.meter-body { position: absolute; left: 28px; bottom: -8px; width: 13px; height: 120px; }
+.meter-track { position: absolute; inset: 0; border: 1.5px solid rgba(237, 245, 250, .85); border-radius: 6px; background: rgba(6, 13, 22, .78); overflow: hidden; }
+.meter-good { position: absolute; left: 0; right: 0; background: rgba(55, 224, 143, .2); transform: translateY(50%); }
+.meter-sweet { position: absolute; left: 0; right: 0; height: 0; background: #37e08f; transform: translateY(50%); }
+.meter-fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: rgba(237, 245, 250, .42); border-top: 2px solid #fff; }
+.meter-notch { position: absolute; left: -6px; right: -6px; height: 2px; transform: translateY(50%); background: linear-gradient(90deg, #37e08f 0 5px, transparent 5px calc(100% - 5px), #37e08f calc(100% - 5px)); }
+/* 这次出手没有完美区（太远，或者起跳时被贴住了）：刻度变灰。 */
+.meter.no-perfect .meter-notch { background: linear-gradient(90deg, rgba(167, 185, 202, .7) 0 5px, transparent 5px calc(100% - 5px), rgba(167, 185, 202, .7) calc(100% - 5px)); }
 
 .controls { position: absolute; left: 28px; bottom: 24px; padding: 10px 14px; border-left: 2px solid rgba(73, 221, 235, .6); background: rgba(6, 13, 22, .6); font-size: 12px; line-height: 1.9; letter-spacing: .06em; color: #a7b9ca; }
 .controls p { margin: 0; }
+.controls .hint { padding-left: 4px; font-size: 11.5px; letter-spacing: .04em; color: #93a6b8; }
 kbd { display: inline-block; min-width: 20px; margin: 0 2px; padding: 0 5px; border: 1px solid rgba(167, 185, 202, .5); border-radius: 3px; background: rgba(20, 39, 59, .8); font: inherit; font-size: 11px; line-height: 1.6; text-align: center; color: #edf5fa; }
 
 .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(4, 9, 16, .72); pointer-events: auto; backdrop-filter: blur(4px); }

@@ -75,8 +75,12 @@ export interface Athlete {
   manual: boolean
   /** 起跳投篮那一刻的移动速度比例（0 站定，1 全速），急停跳投命中率更低。 */
   shotMoving: number
+  /** 这次跳投的完美窗口（最佳出手点前后各多少秒，0 为没有）。起跳那一刻定下，之后防守人再扑上来也不变。 */
+  shotWindow: number
   /** 身体是否正保持朝向、靠滑步移动（防守姿态），动画据此选择步法。 */
   squared: boolean
+  /** 这次上篮或扣篮途中撞上对方身体的结实程度（0 没碰到，1 迎面撞上站稳的人）。 */
+  bump: number
 }
 
 export type BallState = 'held' | 'pass' | 'shot' | 'loose' | 'dead'

@@ -178,12 +178,14 @@ export class Game {
     const shooter = this.match.athletes[this.match.controlled]
     const charging = shooter !== undefined && shooter.action === 'shoot' && !shooter.released && !this.paused
     if (!charging) {
-      if (this.meterShown) this.callbacks.onMeter(false, 0, 0, 0)
+      if (this.meterShown) this.callbacks.onMeter(false, 0, 0, 0, 0)
       this.meterShown = false
       return
     }
     const spot = this.view.locate(shooter.x, shooter.y + shooter.height + 0.3, shooter.z, width, height)
-    this.callbacks.onMeter(true, spot.x, spot.y, Math.min(1, shooter.actionTime / SHOT.forcedRelease))
+    // 松手是按物理步结算的：窗口里有几个物理步算完美，绿区就画多宽，看到的和判定的是一回事。
+    const steps = shooter.shotWindow > 0 ? Math.floor(shooter.shotWindow / STEP + 1e-6) * 2 + 1 : 0
+    this.callbacks.onMeter(true, spot.x, spot.y, Math.min(1, shooter.actionTime / SHOT.forcedRelease), (steps * STEP) / SHOT.forcedRelease)
     this.meterShown = true
   }
 

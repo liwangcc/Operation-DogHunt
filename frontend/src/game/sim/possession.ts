@@ -139,10 +139,13 @@ function resolvePass(match: MatchState, dt: number): void {
   if (ball.y <= BALL.radius + 0.02) ball.state = 'loose'
 }
 
-/** 投篮刚出手、球还在上升时，跳起来的防守人手碰到球就是盖帽。球开始下落后不能再碰（干扰球）。 */
+/**
+ * 投篮刚出手、球还在上升时，跳起来的防守人手碰到球就是盖帽。球开始下落后不能再碰（干扰球）。
+ * 完美出手封不到：它必进，防守的作用是在出手前把完美窗口压窄。
+ */
 function resolveBlock(match: MatchState): void {
   const ball = match.ball
-  if (ball.state !== 'shot' || ball.shotKind === 'dunk' || ball.flight > 0.32 || ball.vy <= 0) return
+  if (ball.state !== 'shot' || ball.shotKind === 'dunk' || ball.shotPerfect || ball.flight > 0.32 || ball.vy <= 0) return
   for (const other of match.athletes) {
     if (other.team === ball.lastTouch || other.action !== 'jump' || other.y < 0.12) continue
     const handX = other.x + Math.cos(other.facing) * 0.25

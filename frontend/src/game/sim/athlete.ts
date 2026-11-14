@@ -1,4 +1,4 @@
-// 球员的身体：三种体型的能力值、跑动与起跳的运动学，以及球员之间的碰撞。
+// 球员的身体：三种体型的能力值，以及跑动与起跳的运动学。球员之间的碰撞在 contact.ts。
 import { BALL, COURT, EDGE, STRAFE } from './constants'
 import type { Athlete, GameEvent, Ratings, Role, TeamId } from './types'
 
@@ -40,7 +40,7 @@ export function createAthlete(id: number, team: TeamId, role: Role): Athlete {
     fromX: 0, fromZ: 0, toX: 0, toZ: 0,
     stealCooldown: 0, dashCooldown: 0, squeakCooldown: 0, lag: 0,
     nextThink: 0, goalX: 0, goalZ: 0, plannedRelease: 0, driving: false,
-    settling: false, manual: false, shotMoving: 0, squared: false,
+    settling: false, manual: false, shotMoving: 0, shotWindow: 0, squared: false, bump: 0,
   }
 }
 
@@ -118,36 +118,4 @@ export function integrate(athlete: Athlete, dt: number, holdsBall: boolean): voi
   const limitZ = COURT.halfWidth + COURT.apron
   athlete.x = Math.min(limitX, Math.max(-limitX, athlete.x))
   athlete.z = Math.min(limitZ, Math.max(-limitZ, athlete.z))
-}
-
-/**
- * 球员之间的碰撞：每人是一个竖直的圆柱，重叠时互相推开，并抵消朝对方冲的那部分速度，
- * 所以持球人撞上防守人会被顶住，而不是穿过去。腾空的球员（扣篮、封盖）之间不互相阻挡。
- */
-export function separate(athletes: Athlete[]): void {
-  for (let i = 0; i < athletes.length; i += 1) {
-    for (let j = i + 1; j < athletes.length; j += 1) {
-      const a = athletes[i]
-      const b = athletes[j]
-      if (a.y > 0.45 || b.y > 0.45) continue
-      const dx = b.x - a.x
-      const dz = b.z - a.z
-      const gap = Math.hypot(dx, dz)
-      const reach = a.radius + b.radius
-      if (gap >= reach || gap < 1e-5) continue
-      const nx = dx / gap
-      const nz = dz / gap
-      const push = (reach - gap) / 2
-      a.x -= nx * push
-      a.z -= nz * push
-      b.x += nx * push
-      b.z += nz * push
-      const closing = (a.vx - b.vx) * nx + (a.vz - b.vz) * nz
-      if (closing <= 0) continue
-      a.vx -= nx * closing * 0.5
-      a.vz -= nz * closing * 0.5
-      b.vx += nx * closing * 0.5
-      b.vz += nz * closing * 0.5
-    }
-  }
 }

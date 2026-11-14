@@ -177,7 +177,7 @@ async function play(): Promise<void> {
         hud.value = state
       },
       onFeed: showFeed,
-      onMeter: (visible, x, y, fill) => gameHud.value?.setMeter(visible, x, y, fill),
+      onMeter: (visible, x, y, fill, perfect) => gameHud.value?.setMeter(visible, x, y, fill, perfect),
     })
     playing.value = 'on'
   } catch (error) {
